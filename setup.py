@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 from pathlib import Path
 
-VERSION = "0.0.1"
+VERSION = "0.0.2"
 DESCRIPTION = "Plot live data that updates in real time using matplotlib backend"
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
@@ -11,6 +11,7 @@ setup(
     version=VERSION,
     author="Tyler Lum",
     author_email="tylergwlum@gmail.com",
+    url="https://github.com/tylerlum/live_plotter",
     description=DESCRIPTION,
     long_description=long_description,
     long_description_content_type="text/markdown",
