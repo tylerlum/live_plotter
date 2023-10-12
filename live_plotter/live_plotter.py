@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Optional, List, Union
 import math
+from datetime import datetime
 
 import seaborn as sns
 
@@ -10,6 +11,10 @@ sns.set_theme()
 
 def assert_equals(a, b):
     assert a == b, f"{a} != {b}"
+
+
+def datetime_str() -> str:
+    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
 def convert_to_list_str_fixed_len(
@@ -70,12 +75,19 @@ class LivePlotter:
         default_title: str = "",
         default_xlabel: str = "x",
         default_ylabel: str = "y",
+        save_to_file_on_close: bool = False,
+        save_to_file_on_exception: bool = False,
     ) -> None:
         self.fig = plt.figure()
         self.default_title = default_title
         self.default_xlabel = default_xlabel
         self.default_ylabel = default_ylabel
+        self.save_to_file_on_close = save_to_file_on_close
+        self.save_to_file_on_exception = save_to_file_on_exception
         plt.show(block=False)
+
+        if self.save_to_file_on_exception:
+            self._setup_exception_hook()
 
     def plot(
         self,
@@ -99,6 +111,31 @@ class LivePlotter:
             ylabels=[self.default_ylabel if ylabel is None else ylabel],
         )
 
+    def _save_to_file(self) -> None:
+        filename = (
+            f"{datetime_str()}_{self.default_title}.png"
+            if len(self.default_title) > 0
+            else f"{datetime_str()}.png"
+        )
+        print(f"Saving to {filename}")
+        self.fig.savefig(filename)
+        print(f"Saved to {filename}")
+
+    def __del__(self) -> None:
+        if self.save_to_file_on_close:
+            self._save_to_file()
+
+    def _setup_exception_hook(self) -> None:
+        # Note this is hacky because excepthook may be overwritten by others
+        import sys
+
+        def exception_hook(exctype, value, traceback):
+            print("Exception hook called")
+            self._save_to_file()
+            sys.__excepthook__(exctype, value, traceback)
+
+        sys.excepthook = exception_hook
+
 
 class LivePlotterGrid:
     def __init__(
@@ -106,12 +143,19 @@ class LivePlotterGrid:
         default_title: Union[str, List[str]] = "",
         default_xlabel: Union[str, List[str]] = "x",
         default_ylabel: Union[str, List[str]] = "y",
+        save_to_file_on_close: bool = False,
+        save_to_file_on_exception: bool = False,
     ) -> None:
         self.fig = plt.figure()
         self.default_title = default_title
         self.default_xlabel = default_xlabel
         self.default_ylabel = default_ylabel
+        self.save_to_file_on_close = save_to_file_on_close
+        self.save_to_file_on_exception = save_to_file_on_exception
         plt.show(block=False)
+
+        if self.save_to_file_on_exception:
+            self._setup_exception_hook()
 
     def plot_grid(
         self,
@@ -160,6 +204,31 @@ class LivePlotterGrid:
             xlabels=xlabels,
             ylabels=ylabels,
         )
+
+    def _save_to_file(self) -> None:
+        filename = (
+            f"{datetime_str()}_{self.default_title}.png"
+            if len(self.default_title) > 0
+            else f"{datetime_str()}.png"
+        )
+        print(f"Saving to {filename}")
+        self.fig.savefig(filename)
+        print(f"Saved to {filename}")
+
+    def __del__(self) -> None:
+        if self.save_to_file_on_close:
+            self._save_to_file()
+
+    def _setup_exception_hook(self) -> None:
+        # Note this is hacky because excepthook may be overwritten by others
+        import sys
+
+        def exception_hook(exctype, value, traceback):
+            print("Exception hook called")
+            self._save_to_file()
+            sys.__excepthook__(exctype, value, traceback)
+
+        sys.excepthook = exception_hook
 
 
 def main() -> None:

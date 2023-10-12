@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Union, List
 import math
+from datetime import datetime
 
 import seaborn as sns
 
@@ -10,8 +11,13 @@ sns.set_theme()
 
 EPSILON = 1e-5
 
+
 def assert_equals(a, b):
     assert a == b, f"{a} != {b}"
+
+
+def datetime_str() -> str:
+    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
 def convert_to_list_str_fixed_len(
@@ -66,11 +72,16 @@ class FastLivePlotter:
         title: str = "",
         xlabel: str = "x",
         ylabel: str = "y",
+        save_to_file_on_close: bool = False,
+        save_to_file_on_exception: bool = False,
     ) -> None:
         self.fig = plt.figure()
         self.title = title
         self.xlabel = xlabel
         self.ylabel = ylabel
+        self.save_to_file_on_close = save_to_file_on_close
+        self.save_to_file_on_exception = save_to_file_on_exception
+
         self.n_rows = 1
         self.n_cols = 1
         self.n_plots = self.n_rows * self.n_cols
@@ -87,6 +98,9 @@ class FastLivePlotter:
         self.fig.tight_layout()
         self.fig.canvas.draw()
         plt.pause(0.001)
+
+        if self.save_to_file_on_exception:
+            self._setup_exception_hook()
 
     def plot(
         self,
@@ -106,6 +120,31 @@ class FastLivePlotter:
             fig=self.fig,
         )
 
+    def _save_to_file(self) -> None:
+        filename = (
+            f"{datetime_str()}_{self.title}.png"
+            if len(self.title) > 0
+            else f"{datetime_str()}.png"
+        )
+        print(f"Saving to {filename}")
+        self.fig.savefig(filename)
+        print(f"Saved to {filename}")
+
+    def __del__(self) -> None:
+        if self.save_to_file_on_close:
+            self._save_to_file()
+
+    def _setup_exception_hook(self) -> None:
+        # Note this is hacky because excepthook may be overwritten by others
+        import sys
+
+        def exception_hook(exctype, value, traceback):
+            print("Exception hook called")
+            self._save_to_file()
+            sys.__excepthook__(exctype, value, traceback)
+
+        sys.excepthook = exception_hook
+
 
 class FastLivePlotterGrid:
     def __init__(
@@ -115,10 +154,14 @@ class FastLivePlotterGrid:
         ylabel: Union[str, List[str]] = "y",
         n_rows: int = 1,
         n_cols: int = 1,
+        save_to_file_on_close: bool = False,
+        save_to_file_on_exception: bool = False,
     ) -> None:
         self.fig = plt.figure()
         self.n_rows = n_rows
         self.n_cols = n_cols
+        self.save_to_file_on_close = save_to_file_on_close
+        self.save_to_file_on_exception = save_to_file_on_exception
         self.n_plots = n_rows * n_cols
 
         self.title = convert_to_list_str_fixed_len(
@@ -149,12 +192,17 @@ class FastLivePlotterGrid:
         self.fig.canvas.draw()
         plt.pause(0.001)
 
+        if self.save_to_file_on_exception:
+            self._setup_exception_hook()
+
     @classmethod
     def from_desired_n_plots(
         cls,
         title: Union[str, List[str]] = "",
         xlabel: Union[str, List[str]] = "x",
         ylabel: Union[str, List[str]] = "y",
+        save_to_file_on_close: bool = False,
+        save_to_file_on_exception: bool = False,
         desired_n_plots: int = 1,
     ) -> FastLivePlotterGrid:
         n_rows = math.ceil(math.sqrt(desired_n_plots))
@@ -166,6 +214,8 @@ class FastLivePlotterGrid:
             ylabel=ylabel,
             n_rows=n_rows,
             n_cols=n_cols,
+            save_to_file_on_close=save_to_file_on_close,
+            save_to_file_on_exception=save_to_file_on_exception,
         )
 
     def plot_grid(
@@ -184,6 +234,31 @@ class FastLivePlotterGrid:
             axes=self.axes,
             fig=self.fig,
         )
+
+    def _save_to_file(self) -> None:
+        filename = (
+            f"{datetime_str()}_{self.title}.png"
+            if len(self.title) > 0
+            else f"{datetime_str()}.png"
+        )
+        print(f"Saving to {filename}")
+        self.fig.savefig(filename)
+        print(f"Saved to {filename}")
+
+    def __del__(self) -> None:
+        if self.save_to_file_on_close:
+            self._save_to_file()
+
+    def _setup_exception_hook(self) -> None:
+        # Note this is hacky because excepthook may be overwritten by others
+        import sys
+
+        def exception_hook(exctype, value, traceback):
+            print("Exception hook called")
+            self._save_to_file()
+            sys.__excepthook__(exctype, value, traceback)
+
+        sys.excepthook = exception_hook
 
 
 def main() -> None:
