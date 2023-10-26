@@ -1,46 +1,41 @@
 from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Union, List
+from typing import Union, List, Optional, Tuple
 import math
-from datetime import datetime
+from collections import defaultdict
 
 import seaborn as sns
 
+from live_plotter.utils import (
+    assert_equals,
+    datetime_str,
+    convert_to_list_str_fixed_len,
+)
+
 sns.set_theme()
 
-EPSILON = 1e-5
+
+def compute_axes_min_max(axes_min: float, axes_max: float) -> Tuple[float, float]:
+    if not math.isclose(axes_min, axes_max):
+        return axes_min, axes_max
+
+    if math.isclose(axes_min, 0.0) or math.isclose(axes_max, 0.0):
+        return -0.05, 0.05
+
+    return 0.95 * axes_min, 1.05 * axes_max
 
 
-def assert_equals(a, b):
-    assert a == b, f"{a} != {b}"
-
-
-def datetime_str() -> str:
-    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-
-def convert_to_list_str_fixed_len(
-    str_or_list_str: Union[str, List[str]], fixed_length: int
-) -> List[str]:
-    if isinstance(str_or_list_str, str):
-        return [str_or_list_str] * fixed_length
-
-    if len(str_or_list_str) < fixed_length:
-        return str_or_list_str + [""] * (fixed_length - len(str_or_list_str))
-
-    return str_or_list_str[:fixed_length]
-
-
-def plot_helper(
+def fast_plot_helper(
+    fig: plt.Figure,
     x_data_list: List[np.ndarray],
     y_data_list: List[np.ndarray],
     n_rows: int,
     n_cols: int,
-    lines: List[plt.Line2D],
     axes: List[plt.Axes],
-    fig: plt.Figure,
+    lines: List[plt.Line2D],
 ) -> None:
+    """Plot data on existing figure onto existing axes and lines"""
     # Shape checks
     n_plots = len(x_data_list)
     assert_equals(len(y_data_list), n_plots)
@@ -58,9 +53,15 @@ def plot_helper(
 
         line.set_data(x_data, y_data)
 
-        # Add EPSILON to avoid case when min == max
-        ax.set_xlim([np.min(x_data), np.max(x_data) + EPSILON])
-        ax.set_ylim([np.min(y_data), np.max(y_data) + EPSILON])
+        # Handle case when min == max
+        x_min, x_max = compute_axes_min_max(
+            axes_min=np.min(x_data), axes_max=np.max(x_data)
+        )
+        y_min, y_max = compute_axes_min_max(
+            axes_min=np.min(y_data), axes_max=np.max(y_data)
+        )
+        ax.set_xlim(left=x_min, right=x_max)
+        ax.set_ylim(bottom=y_min, top=y_max)
 
     fig.tight_layout()
     plt.pause(0.001)
@@ -75,7 +76,6 @@ class FastLivePlotter:
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
-        self.fig = plt.figure()
         self.title = title
         self.xlabel = xlabel
         self.ylabel = ylabel
@@ -88,6 +88,7 @@ class FastLivePlotter:
         plt.show(block=False)
 
         ax_idx = 1
+        self.fig = plt.figure()
         ax = self.fig.add_subplot(self.n_rows, self.n_cols, ax_idx)
         ax.set_title(title)
         ax.set_xlabel(xlabel)
@@ -104,20 +105,25 @@ class FastLivePlotter:
 
     def plot(
         self,
-        x_data: np.ndarray,
         y_data: np.ndarray,
+        x_data: Optional[np.ndarray] = None,
     ) -> None:
-        assert_equals(x_data.shape, y_data.shape)
-        assert_equals(len(x_data.shape), 1)
+        assert_equals(len(y_data.shape), 1)
 
-        plot_helper(
+        if x_data is None:
+            x_data = np.arange(len(y_data))
+
+        assert x_data is not None
+        assert_equals(x_data.shape, y_data.shape)
+
+        fast_plot_helper(
+            fig=self.fig,
             x_data_list=[x_data],
             y_data_list=[y_data],
             n_rows=self.n_rows,
             n_cols=self.n_cols,
-            lines=self.lines,
             axes=self.axes,
-            fig=self.fig,
+            lines=self.lines,
         )
 
     def _save_to_file(self) -> None:
@@ -157,34 +163,41 @@ class FastLivePlotterGrid:
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
-        self.fig = plt.figure()
         self.n_rows = n_rows
         self.n_cols = n_cols
         self.save_to_file_on_close = save_to_file_on_close
         self.save_to_file_on_exception = save_to_file_on_exception
         self.n_plots = n_rows * n_cols
 
-        self.title = convert_to_list_str_fixed_len(
+        self.titles = convert_to_list_str_fixed_len(
             str_or_list_str=title, fixed_length=self.n_plots
         )
-        self.xlabel = convert_to_list_str_fixed_len(
+        self.xlabels = convert_to_list_str_fixed_len(
             str_or_list_str=xlabel, fixed_length=self.n_plots
         )
-        self.ylabel = convert_to_list_str_fixed_len(
+        self.ylabels = convert_to_list_str_fixed_len(
             str_or_list_str=ylabel, fixed_length=self.n_plots
         )
+        assert (
+            len(self.titles) == len(self.xlabels) == len(self.ylabels) == self.n_plots
+        )
+
         plt.show(block=False)
 
+        self.fig = plt.figure()
         self.axes = []
         self.lines = []
-        for i in range(self.n_plots):
+        for i, (_title, _xlabel, _ylabel) in enumerate(
+            zip(self.titles, self.xlabels, self.ylabels)
+        ):
             ax_idx = i + 1
             ax = self.fig.add_subplot(n_rows, n_cols, ax_idx)
-            ax.set_title(
-                " ".join([self.title[i]] + ([str(ax_idx)] if self.n_plots > 1 else []))
+            adjusted_title = (
+                " ".join([_title, f"(Plot {i})"]) if self.n_plots > 1 else _title
             )
-            ax.set_xlabel(self.xlabel[i])
-            ax.set_ylabel(self.ylabel[i])
+            ax.set_title(adjusted_title)
+            ax.set_xlabel(_xlabel)
+            ax.set_ylabel(_ylabel)
             line = ax.plot([], [])[0]
             self.axes.append(ax)
             self.lines.append(line)
@@ -220,25 +233,34 @@ class FastLivePlotterGrid:
 
     def plot_grid(
         self,
-        x_data_list: List[np.ndarray],
         y_data_list: List[np.ndarray],
+        x_data_list: Optional[List[np.ndarray]] = None,
     ) -> None:
-        assert_equals(len(x_data_list), len(y_data_list))
+        for y_data in y_data_list:
+            assert_equals(len(y_data.shape), 1)
 
-        plot_helper(
+        if x_data_list is None:
+            x_data_list = [np.arange(len(y_data)) for y_data in y_data_list]
+
+        assert x_data_list is not None
+        assert_equals(len(x_data_list), len(y_data_list))
+        for x_data, y_data in zip(x_data_list, y_data_list):
+            assert_equals(x_data.shape, y_data.shape)
+
+        fast_plot_helper(
+            fig=self.fig,
             x_data_list=x_data_list,
             y_data_list=y_data_list,
             n_rows=self.n_rows,
             n_cols=self.n_cols,
-            lines=self.lines,
             axes=self.axes,
-            fig=self.fig,
+            lines=self.lines,
         )
 
     def _save_to_file(self) -> None:
         filename = (
-            f"{datetime_str()}_{self.title}.png"
-            if len(self.title) > 0
+            f"{datetime_str()}_{self.titles}.png"
+            if len("".join(self.titles)) > 0
             else f"{datetime_str()}.png"
         )
         print(f"Saving to {filename}")
@@ -268,37 +290,33 @@ def main() -> None:
 
     x_data = []
     for i in range(25):
-        x_data.append(i)
+        x_data.append(0.5 * i)
         live_plotter.plot(x_data=np.array(x_data), y_data=np.sin(x_data))
 
     time.sleep(2)
 
     live_plotter_grid = FastLivePlotterGrid(title="sin cos", n_rows=2, n_cols=1)
     x_data = []
-    x_data2 = []
     for i in range(25):
         x_data.append(i)
-        x_data2.append(i)
-
         live_plotter_grid.plot_grid(
-            x_data_list=[np.array(x_data), np.array(x_data2)],
-            y_data_list=[np.sin(x_data), np.cos(x_data2)],
+            y_data_list=[np.sin(x_data), np.cos(x_data)],
         )
 
     time.sleep(2)
+
     NUM_DATAS = 7
+    plot_names = [f"exp(-{plot_idx}/10 * x)" for plot_idx in range(NUM_DATAS)]
     live_plotter_grid = FastLivePlotterGrid.from_desired_n_plots(
-        title="exp", desired_n_plots=NUM_DATAS
+        title=plot_names, desired_n_plots=len(plot_names)
     )
-    x_data_list = [[] for _ in range(NUM_DATAS)]
-    y_data_list = [[] for _ in range(NUM_DATAS)]
+    y_data_dict = defaultdict(list)
     for i in range(25):
-        for j in range(NUM_DATAS):
-            x_data_list[j].append(i)
-            y_data_list[j].append(np.exp(-j / 10 * i))
+        for plot_idx in range(NUM_DATAS):
+            y_data_dict[f"exp(-{plot_idx}/10 * x)"].append(np.exp(-plot_idx / 10 * i))
+
         live_plotter_grid.plot_grid(
-            x_data_list=[np.array(x_data) for x_data in x_data_list],
-            y_data_list=[np.array(y_data) for y_data in y_data_list],
+            y_data_list=[np.array(y_data_dict[plot_name]) for plot_name in plot_names],
         )
 
 

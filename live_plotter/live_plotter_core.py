@@ -2,31 +2,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Optional, List, Union
 import math
-from datetime import datetime
+from collections import defaultdict
 
 import seaborn as sns
 
+from live_plotter.utils import (
+    assert_equals,
+    datetime_str,
+    convert_to_list_str_fixed_len,
+)
+
+
 sns.set_theme()
-
-
-def assert_equals(a, b):
-    assert a == b, f"{a} != {b}"
-
-
-def datetime_str() -> str:
-    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-
-def convert_to_list_str_fixed_len(
-    str_or_list_str: Union[str, List[str]], fixed_length: int
-) -> List[str]:
-    if isinstance(str_or_list_str, str):
-        return [str_or_list_str] * fixed_length
-
-    if len(str_or_list_str) < fixed_length:
-        return str_or_list_str + [""] * (fixed_length - len(str_or_list_str))
-
-    return str_or_list_str[:fixed_length]
 
 
 def plot_helper(
@@ -39,6 +26,7 @@ def plot_helper(
     xlabels: Optional[List[str]],
     ylabels: Optional[List[str]],
 ) -> None:
+    """Plot data on existing figure"""
     n_plots = len(x_data_list)
     assert_equals(len(y_data_list), n_plots)
     assert n_plots <= n_rows * n_cols, f"{n_plots} > {n_rows} * {n_cols}"
@@ -58,7 +46,10 @@ def plot_helper(
 
         ax.plot(x_data_list[i], y_data_list[i])
         if titles is not None:
-            ax.set_title(titles[i])
+            adjusted_title = (
+                " ".join([titles[i], f"(Plot {i})"]) if n_plots > 1 else titles[i]
+            )
+            ax.set_title(adjusted_title)
         if xlabels is not None:
             ax.set_xlabel(xlabels[i])
         if ylabels is not None:
@@ -78,12 +69,13 @@ class LivePlotter:
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
-        self.fig = plt.figure()
         self.default_title = default_title
         self.default_xlabel = default_xlabel
         self.default_ylabel = default_ylabel
         self.save_to_file_on_close = save_to_file_on_close
         self.save_to_file_on_exception = save_to_file_on_exception
+
+        self.fig = plt.figure()
         plt.show(block=False)
 
         if self.save_to_file_on_exception:
@@ -91,15 +83,21 @@ class LivePlotter:
 
     def plot(
         self,
-        x_data: np.ndarray,
         y_data: np.ndarray,
+        x_data: Optional[np.ndarray] = None,
         title: Optional[str] = None,
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
     ) -> None:
         """Plot 1D data"""
+        assert_equals(len(y_data.shape), 1)
+
+        if x_data is None:
+            x_data = np.arange(len(y_data))
+
+        assert x_data is not None
         assert_equals(x_data.shape, y_data.shape)
-        assert_equals(len(x_data.shape), 1)
+
         plot_helper(
             fig=self.fig,
             x_data_list=[x_data],
@@ -146,12 +144,13 @@ class LivePlotterGrid:
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
-        self.fig = plt.figure()
         self.default_title = default_title
         self.default_xlabel = default_xlabel
         self.default_ylabel = default_ylabel
         self.save_to_file_on_close = save_to_file_on_close
         self.save_to_file_on_exception = save_to_file_on_exception
+
+        self.fig = plt.figure()
         plt.show(block=False)
 
         if self.save_to_file_on_exception:
@@ -159,8 +158,8 @@ class LivePlotterGrid:
 
     def plot_grid(
         self,
-        x_data_list: List[np.ndarray],
         y_data_list: List[np.ndarray],
+        x_data_list: Optional[List[np.ndarray]] = None,
         n_rows: Optional[int] = None,
         n_cols: Optional[int] = None,
         title: Optional[Union[str, List[str]]] = None,
@@ -168,7 +167,17 @@ class LivePlotterGrid:
         ylabel: Optional[Union[str, List[str]]] = None,
     ) -> None:
         """Plot multiple 1D datas in a grid"""
+        for y_data in y_data_list:
+            assert_equals(len(y_data.shape), 1)
+
+        if x_data_list is None:
+            x_data_list = [np.arange(len(y_data)) for y_data in y_data_list]
+
+        assert x_data_list is not None
         assert_equals(len(x_data_list), len(y_data_list))
+        for x_data, y_data in zip(x_data_list, y_data_list):
+            assert_equals(x_data.shape, y_data.shape)
+
         n_plots = len(x_data_list)
 
         # Infer n_rows and n_cols if not given
@@ -238,22 +247,17 @@ def main() -> None:
 
     x_data = []
     for i in range(25):
-        x_data.append(i)
+        x_data.append(0.5 * i)
         live_plotter.plot(x_data=np.array(x_data), y_data=np.sin(x_data))
 
     time.sleep(2)
 
     live_plotter_grid = LivePlotterGrid(default_title="sin")
     x_data = []
-    x_data2 = []
     for i in range(25):
         x_data.append(i)
-        x_data2.append(i)
-
         live_plotter_grid.plot_grid(
-            x_data_list=[np.array(x_data), np.array(x_data2)],
-            y_data_list=[np.sin(x_data), np.cos(x_data2)],
-            n_rows=2,
+            y_data_list=[np.sin(x_data), np.cos(x_data)],
             title=["sin", "cos"],
         )
 
@@ -261,17 +265,14 @@ def main() -> None:
 
     live_plotter_grid.default_title = "exp"
     NUM_DATAS = 7
-    x_data_list = [[] for _ in range(NUM_DATAS)]
-    y_data_list = [[] for _ in range(NUM_DATAS)]
+    y_data_dict = defaultdict(list)
     for i in range(25):
-        for j in range(NUM_DATAS):
-            x_data_list[j].append(i)
-            y_data_list[j].append(np.exp(-j / 10 * i))
+        for plot_idx in range(NUM_DATAS):
+            y_data_dict[f"exp(-{plot_idx}/10 * x)"].append(np.exp(-plot_idx / 10 * i))
+
         live_plotter_grid.plot_grid(
-            x_data_list=[np.array(x_data) for x_data in x_data_list],
-            y_data_list=[np.array(y_data) for y_data in y_data_list],
-            xlabel=[f"x{i}" for i in range(NUM_DATAS)],
-            ylabel=[f"y{i}" for i in range(NUM_DATAS)],
+            y_data_list=[np.array(y_data) for y_data in y_data_dict.values()],
+            ylabel=list(y_data_dict.keys()),
         )
 
 

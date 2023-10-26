@@ -52,7 +52,7 @@ live_plotter = LivePlotter(default_title="sin")
 
 x_data = []
 for i in range(25):
-    x_data.append(i)
+    x_data.append(2 * i)
     live_plotter.plot(x_data=np.array(x_data), y_data=np.sin(x_data))
 ```
 
@@ -66,7 +66,7 @@ live_plotter = FastLivePlotter(title="sin")
 
 x_data = []
 for i in range(25):
-    x_data.append(i)
+    x_data.append(2 * i)
     live_plotter.plot(x_data=np.array(x_data), y_data=np.sin(x_data))
 ```
 
@@ -77,16 +77,12 @@ import numpy as np
 from live_plotter import LivePlotterGrid
 
 live_plotter_grid = LivePlotterGrid(default_title="sin")
+
 x_data = []
-x_data2 = []
 for i in range(25):
     x_data.append(i)
-    x_data2.append(i)
-
     live_plotter_grid.plot_grid(
-        x_data_list=[np.array(x_data), np.array(x_data2)],
-        y_data_list=[np.sin(x_data), np.cos(x_data2)],
-        n_rows=2,
+        y_data_list=[np.sin(x_data), np.cos(x_data)],
         title=["sin", "cos"],
     )
 ```
@@ -100,18 +96,14 @@ from live_plotter import FastLivePlotterGrid
 
 live_plotter_grid = FastLivePlotterGrid(title="sin cos", n_rows=2, n_cols=1)
 x_data = []
-x_data2 = []
 for i in range(25):
     x_data.append(i)
-    x_data2.append(i)
-
     live_plotter_grid.plot_grid(
-        x_data_list=[np.array(x_data), np.array(x_data2)],
-        y_data_list=[np.sin(x_data), np.cos(x_data2)],
+        y_data_list=[np.sin(x_data), np.cos(x_data)],
     )
 ```
 
-## Example Usage of `FastLivePlotterGrid` (more complex)
+## Example Usage of `FastLivePlotterGrid` (recommended method for more complex examples)
 
 ```
 import numpy as np
@@ -119,19 +111,16 @@ import numpy as np
 from live_plotter import FastLivePlotterGrid
 
 NUM_DATAS = 7
+plot_names = [f"exp(-{plot_idx}/10 * x)" for plot_idx in range(NUM_DATAS)]
 live_plotter_grid = FastLivePlotterGrid.from_desired_n_plots(
-    title="exp", desired_n_plots=NUM_DATAS
+    title=plot_names, desired_n_plots=len(plot_names)
 )
-x_data_list = [[] for _ in range(NUM_DATAS)]
-y_data_list = [[] for _ in range(NUM_DATAS)]
+y_data_dict = defaultdict(list)
 for i in range(25):
-    # Add new data
-    for j in range(NUM_DATAS):
-        x_data_list[j].append(i)
-        y_data_list[j].append(np.exp(-j / 10 * i))
+    for plot_idx in range(NUM_DATAS):
+        y_data_dict[f"exp(-{plot_idx}/10 * x)"].append(np.exp(-plot_idx / 10 * i))
 
     live_plotter_grid.plot_grid(
-        x_data_list=[np.array(x_data) for x_data in x_data_list],
-        y_data_list=[np.array(y_data) for y_data in y_data_list],
+        y_data_list=[np.array(y_data_dict[plot_name]) for plot_name in plot_names],
     )
 ```
