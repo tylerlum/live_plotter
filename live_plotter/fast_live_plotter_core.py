@@ -305,15 +305,23 @@ def main() -> None:
 
     time.sleep(2)
 
-    NUM_DATAS = 7
-    plot_names = [f"exp(-{plot_idx}/10 * x)" for plot_idx in range(NUM_DATAS)]
+    y_data_dict = {
+        "exp(-x/10)": [],
+        "ln(x + 1)": [],
+        "x^2": [],
+        "4x^4": [],
+        "ln(2^x)": [],
+    }
+    plot_names = list(y_data_dict.keys())
     live_plotter_grid = FastLivePlotterGrid.from_desired_n_plots(
         title=plot_names, desired_n_plots=len(plot_names)
     )
-    y_data_dict = defaultdict(list)
     for i in range(25):
-        for plot_idx in range(NUM_DATAS):
-            y_data_dict[f"exp(-{plot_idx}/10 * x)"].append(np.exp(-plot_idx / 10 * i))
+        y_data_dict["exp(-x/10)"].append(np.exp(-i / 10))
+        y_data_dict["ln(x + 1)"].append(np.log(i + 1))
+        y_data_dict["x^2"].append(np.power(i, 2))
+        y_data_dict["4x^4"].append(4 * np.power(i, 4))
+        y_data_dict["ln(2^x)"].append(np.log(np.power(2, i)))
 
         live_plotter_grid.plot_grid(
             y_data_list=[np.array(y_data_dict[plot_name]) for plot_name in plot_names],
