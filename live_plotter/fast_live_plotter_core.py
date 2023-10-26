@@ -295,7 +295,7 @@ def main() -> None:
 
     time.sleep(2)
 
-    live_plotter_grid = FastLivePlotterGrid(title="sin cos", n_rows=2, n_cols=1)
+    live_plotter_grid = FastLivePlotterGrid(title=["sin", "cos"], n_rows=2, n_cols=1)
     x_data = []
     for i in range(25):
         x_data.append(i)

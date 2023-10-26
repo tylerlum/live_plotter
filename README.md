@@ -12,7 +12,7 @@ pip install live_plotter
 
 # Usage
 
-In this library, we have two axes of variation. The first axis of variation is using either `LivePlotter` or `FastLivePlotter`. `LivePlotter` is more flexible and dynamic, but this results in slower updates. `FastLivePlotter` requires that the user specify the figure's shape from the beginning, but this allows it to update faster by modifying an existing plot rather than creating a new plot from scratch. Please refer to the associated example code for more details. The second axis of variation is using either `LivePlotter` or `LivePlotterGrid`. `LivePlotter` creates 1 plot, while `LivePlotterGrid` creates a grid of plots.
+In this library, we have two axes of variation. The first axis of variation is using either `LivePlotter` or `LivePlotterGrid`. `LivePlotter` creates 1 plot, while `LivePlotterGrid` creates a grid of plots. The second axis of variation is using either `LivePlotterGrid` or `FastLivePlotterGrid`. `LivePlotterGrid` is more flexible and dynamic, but this results in slower updates. `FastLivePlotterGrid` requires that the user specify the number of plots in the figure from the beginning, but this allows it to update faster by modifying an existing plot rather than creating a new plot from scratch. Please refer to the associated example code for more details.
 
 Lastly, you can add `save_to_file_on_close=True` to save the figure to a file when the live plotter is deleted (either out of scope or end of script). You can add `save_to_file_on_exception=True` to save the figure to a file when an exception occurs. Note this feature is experimental.
 
@@ -28,17 +28,9 @@ Options:
 
 ## Live Plotter
 
-```
-python live_plotter.py
-```
-
 ![live_plotter](https://github.com/tylerlum/live_plotting/assets/26510814/919532a7-3d6d-47c2-b2e6-4aebb66d2591)
 
 ## Fast Live Plotter
-
-```
-python fast_live_plotter.py
-```
 
 ![fast_live_plotter](https://github.com/tylerlum/live_plotting/assets/26510814/6c9c1647-e4b2-4589-ba91-ba3f5947843c)
 
@@ -94,7 +86,7 @@ import numpy as np
 
 from live_plotter import FastLivePlotterGrid
 
-live_plotter_grid = FastLivePlotterGrid(title="sin cos", n_rows=2, n_cols=1)
+live_plotter_grid = FastLivePlotterGrid(title=["sin", "cos"], n_rows=2, n_cols=1)
 x_data = []
 for i in range(25):
     x_data.append(i)
@@ -103,7 +95,7 @@ for i in range(25):
     )
 ```
 
-## Example Usage of `FastLivePlotterGrid` (recommended method for more complex examples)
+## Example Usage of `FastLivePlotterGrid` using `from_desired_n_plots` (recommended method for more complex use-cases)
 
 ```
 import numpy as np
