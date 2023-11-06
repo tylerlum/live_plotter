@@ -16,6 +16,8 @@ In this library, we have two axes of variation. The first axis of variation is u
 
 Lastly, you can add `save_to_file_on_close=True` to save the figure to a file when the live plotter is deleted (either out of scope or end of script). You can add `save_to_file_on_exception=True` to save the figure to a file when an exception occurs. Note this feature is experimental.
 
+New feature: we have added `FastLivePlotterGridSeparateProcess`, which is a wrapper around `FastLivePlotterGrid` but puts the plotting code in another process. Plotting takes time, so running the plotting code in the same process as the main process can significantly slow things down, especially as plots get larger. This must be done on a new process instead of a new thread because the GUI does not work on non-main threads.
+
 Options:
 
 - `LivePlotter`
@@ -25,6 +27,8 @@ Options:
 - `FastLivePlotter`
 
 - `FastLivePlotterGrid`
+
+- `FastLivePlotterGridSeparateProcess`
 
 ## Live Plotter
 
@@ -123,4 +127,73 @@ for i in range(25):
     live_plotter_grid.plot_grid(
         y_data_list=[np.array(y_data_dict[plot_name]) for plot_name in plot_names],
     )
+```
+
+## Example Usage of `FastLivePlotterGridSeparateProcess` (recommended method to minimize plotting time impacting main code performance)
+
+```
+import numpy as np
+import time
+
+from live_plotter import FastLivePlotterGridSeparateProcess
+
+N_ITERS = 100
+SIMULATED_COMPUTATION_TIME_S = 0.1
+OPTIMAL_TIME_S = N_ITERS * SIMULATED_COMPUTATION_TIME_S
+
+live_plotter_separate_process = FastLivePlotterGridSeparateProcess(
+    plot_names=["sin", "cos"]
+)
+live_plotter_separate_process.start()
+start_time_separate_process = time.time()
+for i in range(N_ITERS):
+    time.sleep(SIMULATED_COMPUTATION_TIME_S)
+    live_plotter_separate_process.data_dict["sin"].append(np.sin(i))
+    live_plotter_separate_process.data_dict["cos"].append(np.cos(i))
+    live_plotter_separate_process.update()
+time_taken_separate_process = time.time() - start_time_separate_process
+
+print(f"Time taken separate process: {round(time_taken_separate_process, 1)} s")
+print(f"OPTIMAL_TIME_S: {round(OPTIMAL_TIME_S, 1)} s")
+```
+Output:
+```
+Time taken separate process: 10.3 s
+OPTIMAL_TIME_S: 10.0 s
+```
+You may get an error `ConnectionResetError: [Errno 104] Connection reset by peer` at the end. This is not a problem, as it means the main process ended before the new process could be killed.
+
+
+Note how this runs much faster than the equivalent same process code
+```
+import numpy as np
+import time
+
+from live_plotter import FastLivePlotterGrid
+
+N_ITERS = 100
+SIMULATED_COMPUTATION_TIME_S = 0.1
+OPTIMAL_TIME_S = N_ITERS * SIMULATED_COMPUTATION_TIME_S
+
+# Slower when plotting is on same process
+live_plotter = FastLivePlotterGrid.from_desired_n_plots(
+    title=["sin", "cos"], desired_n_plots=2
+)
+x_data = []
+start_time_same_process = time.time()
+for i in range(N_ITERS):
+    x_data.append(i)
+    time.sleep(SIMULATED_COMPUTATION_TIME_S)
+    live_plotter.plot_grid(
+        y_data_list=[np.sin(x_data), np.cos(x_data)],
+    )
+time_taken_same_process = time.time() - start_time_same_process
+
+print(f"Time taken same process: {round(time_taken_same_process, 1)} s")
+print(f"OPTIMAL_TIME_S: {round(OPTIMAL_TIME_S, 1)} s")
+```
+Output:
+```
+Time taken same process: 18.3 s
+OPTIMAL_TIME_S: 10.0 s
 ```

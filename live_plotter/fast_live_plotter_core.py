@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Union, List, Optional, Tuple
 import math
-from collections import defaultdict
 
 import seaborn as sns
 
