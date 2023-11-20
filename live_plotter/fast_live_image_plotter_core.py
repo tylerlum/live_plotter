@@ -227,16 +227,17 @@ class FastLiveImagePlotterGrid:
 
 def main() -> None:
     import time
+    N = 25
 
     live_plotter = FastLiveImagePlotter(title="sin")
 
     x_data = []
-    for i in range(25):
+    for i in range(N):
         x_data.append(0.5 * i)
         image_data = (
             np.sin(x_data)[None, ...]
             .repeat(DEFAULT_IMAGE_HEIGHT, 0)
-            .repeat(DEFAULT_IMAGE_WIDTH, 1)
+            .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
         )
         live_plotter.plot(image_data=scale_image(image_data, min_val=-1.0, max_val=1.0))
 
@@ -246,17 +247,17 @@ def main() -> None:
         title=["sin", "cos"], n_rows=2, n_cols=1
     )
     x_data = []
-    for i in range(25):
+    for i in range(N):
         x_data.append(i)
         image_data_1 = (
             np.sin(x_data)[None, ...]
             .repeat(DEFAULT_IMAGE_HEIGHT, 0)
-            .repeat(DEFAULT_IMAGE_WIDTH, 1)
+            .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
         )
         image_data_2 = (
             np.cos(x_data)[None, ...]
             .repeat(DEFAULT_IMAGE_HEIGHT, 0)
-            .repeat(DEFAULT_IMAGE_WIDTH, 1)
+            .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
         )
         live_plotter_grid.plot_grid(
             image_data_list=[
@@ -278,7 +279,7 @@ def main() -> None:
     live_plotter_grid = FastLiveImagePlotterGrid.from_desired_n_plots(
         title=plot_names, desired_n_plots=len(plot_names)
     )
-    for i in range(25):
+    for i in range(N):
         y_data_dict["exp(-x/10)"].append(np.exp(-i / 10))
         y_data_dict["ln(x + 1)"].append(np.log(i + 1))
         y_data_dict["x^2"].append(np.power(i, 2))
@@ -289,7 +290,7 @@ def main() -> None:
             scale_image(
                 np.array(y_data_dict[plot_name])[None, ...]
                 .repeat(DEFAULT_IMAGE_HEIGHT, 0)
-                .repeat(DEFAULT_IMAGE_WIDTH, 1)
+                .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
             )
             for plot_name in plot_names
         ]
