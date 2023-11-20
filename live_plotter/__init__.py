@@ -1,3 +1,7 @@
 from .live_plotter_core import LivePlotter, LivePlotterGrid
 from .fast_live_plotter_core import FastLivePlotter, FastLivePlotterGrid
 from .fast_live_plotter_grid_separate_process_core import FastLivePlotterGridSeparateProcess
+from .fast_live_image_plotter_core import FastLiveImagePlotter, FastLiveImagePlotterGrid
+from .fast_live_image_plotter_grid_separate_process_core import (
+    FastLiveImagePlotterGridSeparateProcess,
+)
