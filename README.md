@@ -12,23 +12,35 @@ pip install live_plotter
 
 # Usage
 
-In this library, we have two axes of variation. The first axis of variation is using either `LivePlotter` or `LivePlotterGrid`. `LivePlotter` creates 1 plot, while `LivePlotterGrid` creates a grid of plots. The second axis of variation is using either `LivePlotterGrid` or `FastLivePlotterGrid`. `LivePlotterGrid` is more flexible and dynamic, but this results in slower updates. `FastLivePlotterGrid` requires that the user specify the number of plots in the figure from the beginning, but this allows it to update faster by modifying an existing plot rather than creating a new plot from scratch. Please refer to the associated example code for more details.
+In this library, we have four axes of variation:
+
+* The first axis of variation is using either `LivePlotter` or `LivePlotterGrid`. `LivePlotter` creates 1 plot, while `LivePlotterGrid` creates a grid of plots. 
+
+* The second axis of variation is using either `LivePlotterGrid` or `FastLivePlotterGrid`. `LivePlotterGrid` is more flexible and dynamic, but this results in slower updates. `FastLivePlotterGrid` requires that the user specify the number of plots in the figure from the beginning, but this allows it to update faster by modifying an existing plot rather than creating a new plot from scratch. Please refer to the associated example code for more details.
+
+* The third axis of variation is using either `LiveImagePlotterGrid` or `LiveImagePlotterGridSeparateProcess`. `LiveImagePlotterGrid` is run on the same process as the main process and `LiveImagePlotterGridSeparateProcess` is run on another process (much less performance overhead on the main process). This is a wrapper around `LivePlotterGrid` but puts the plotting code in another process. Plotting takes time, so running the plotting code in the same process as the main process can significantly slow things down, especially as plots get larger. This must be done on a new process instead of a new thread because the GUI does not work on non-main threads.
+
+* The fourth axis of variation is using either `LivePlotter` or `LiveImagePlotter`. `LivePlotter` creates line plots and `LiveImagePlotter` creates images.
 
 Lastly, you can add `save_to_file_on_close=True` to save the figure to a file when the live plotter is deleted (either out of scope or end of script). You can add `save_to_file_on_exception=True` to save the figure to a file when an exception occurs. Note this feature is experimental.
 
-New feature: we have added `FastLivePlotterGridSeparateProcess`, which is a wrapper around `FastLivePlotterGrid` but puts the plotting code in another process. Plotting takes time, so running the plotting code in the same process as the main process can significantly slow things down, especially as plots get larger. This must be done on a new process instead of a new thread because the GUI does not work on non-main threads.
-
 Options:
 
-- `LivePlotter`
+- `LivePlotter`, `LivePlotterGrid`
 
-- `LivePlotterGrid`
+- `FastLivePlotter`, `FastLivePlotterGrid`
 
-- `FastLivePlotter`
-
-- `FastLivePlotterGrid`
+- `LivePlotterGridSeparateProcess`
 
 - `FastLivePlotterGridSeparateProcess`
+
+- `LiveImagePlotter`, `LiveImagePlotterGrid`
+
+- `FastLiveImagePlotter`, `FastLiveImagePlotterGrid`
+
+- `LiveImagePlotterGridSeparateProcess`
+
+- `FastLiveImagePlotterGridSeparateProcess`
 
 ## Live Plotter
 
@@ -196,4 +208,33 @@ Output:
 ```
 Time taken same process: 18.3 s
 OPTIMAL_TIME_S: 10.0 s
+```
+
+## Example Usage of `LiveImagePlotter`
+
+Note:
+
+* images must be (M, N) or (M, N, 3) or (M, N, 4)
+
+* Typically images must either be floats in [0, 1] or int in [0, 255]. If not in this range, we will automatically scale it and print a warning. We recommend using the scale_image function as shown below.
+
+```
+import numpy as np
+from live_plotter import LiveImagePlotter, scale_image
+
+N = 25
+DEFAULT_IMAGE_HEIGHT = 100
+DEFAULT_IMAGE_WIDTH = 100
+
+live_plotter = LiveImagePlotter(default_title="sin")
+
+x_data = []
+for i in range(N):
+    x_data.append(0.5 * i)
+    image_data = (
+        np.sin(x_data)[None, ...]
+        .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+        .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
+    )
+    live_plotter.plot(image_data=scale_image(image_data, min_val=-1.0, max_val=1.0))
 ```

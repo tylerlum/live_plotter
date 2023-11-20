@@ -3,10 +3,10 @@ from typing import List
 import numpy as np
 import sys
 
-from live_plotter.fast_live_plotter_core import FastLivePlotterGrid
+from live_plotter.live_plotter_core import LivePlotterGrid
 
 
-class FastLivePlotterGridSeparateProcess:
+class LivePlotterGridSeparateProcess:
     def __init__(
         self,
         plot_names: List[str],
@@ -15,9 +15,8 @@ class FastLivePlotterGridSeparateProcess:
     ) -> None:
         self.plot_names = plot_names
 
-        self.live_plotter = FastLivePlotterGrid.from_desired_n_plots(
-            title=plot_names,
-            desired_n_plots=len(plot_names),
+        self.live_plotter = LivePlotterGrid(
+            default_title=plot_names,
             save_to_file_on_close=save_to_file_on_close,
             save_to_file_on_exception=save_to_file_on_exception,
         )
@@ -71,9 +70,7 @@ def main() -> None:
     OPTIMAL_TIME_S = N_ITERS * SIMULATED_COMPUTATION_TIME_S
 
     # Slower when plotting is on same process
-    live_plotter = FastLivePlotterGrid.from_desired_n_plots(
-        title=["sin", "cos"], desired_n_plots=2
-    )
+    live_plotter = LivePlotterGrid(default_title=["sin", "cos"])
     x_data = []
     start_time_same_process = time.time()
     for i in range(N_ITERS):
@@ -85,7 +82,7 @@ def main() -> None:
     time_taken_same_process = time.time() - start_time_same_process
 
     # Faster when plotting is on separate process
-    live_plotter_separate_process = FastLivePlotterGridSeparateProcess(
+    live_plotter_separate_process = LivePlotterGridSeparateProcess(
         plot_names=["sin", "cos"]
     )
     live_plotter_separate_process.start()

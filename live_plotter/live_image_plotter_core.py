@@ -11,33 +11,30 @@ from live_plotter.utils import (
     assert_equals,
     datetime_str,
     convert_to_list_str_fixed_len,
+    DEFAULT_IMAGE_HEIGHT,
+    DEFAULT_IMAGE_WIDTH,
+    preprocess_image_data_if_needed,
+    validate_image_data,
+    scale_image,
 )
 
 
 sns.set_theme()
 
 
-def plot_helper(
+def plot_images_helper(
     fig: Figure,
-    x_data_list: List[np.ndarray],
-    y_data_list: List[np.ndarray],
+    image_data_list: List[np.ndarray],
     n_rows: int,
     n_cols: int,
     titles: Optional[List[str]],
-    xlabels: Optional[List[str]],
-    ylabels: Optional[List[str]],
 ) -> None:
     """Plot data on existing figure"""
-    n_plots = len(x_data_list)
-    assert_equals(len(y_data_list), n_plots)
+    n_plots = len(image_data_list)
     assert n_plots <= n_rows * n_cols, f"{n_plots} > {n_rows} * {n_cols}"
 
     if titles is not None:
         assert_equals(len(titles), n_plots)
-    if xlabels is not None:
-        assert_equals(len(xlabels), n_plots)
-    if ylabels is not None:
-        assert_equals(len(ylabels), n_plots)
 
     plt.clf()
 
@@ -45,34 +42,28 @@ def plot_helper(
         ax_idx = i + 1
         ax = fig.add_subplot(n_rows, n_cols, ax_idx)
 
-        ax.plot(x_data_list[i], y_data_list[i])
+        validate_image_data(image_data=image_data_list[i])
+        ax.imshow(image_data_list[i])
+        ax.grid(False)
         if titles is not None:
             adjusted_title = (
                 " ".join([titles[i], f"(Plot {i})"]) if n_plots > 1 else titles[i]
             )
             ax.set_title(adjusted_title)
-        if xlabels is not None:
-            ax.set_xlabel(xlabels[i])
-        if ylabels is not None:
-            ax.set_ylabel(ylabels[i])
 
     fig.tight_layout()
     fig.canvas.draw()
     plt.pause(0.001)
 
 
-class LivePlotter:
+class LiveImagePlotter:
     def __init__(
         self,
         default_title: str = "",
-        default_xlabel: str = "",
-        default_ylabel: str = "",
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
         self.default_title = default_title
-        self.default_xlabel = default_xlabel
-        self.default_ylabel = default_ylabel
         self.save_to_file_on_close = save_to_file_on_close
         self.save_to_file_on_exception = save_to_file_on_exception
 
@@ -84,30 +75,18 @@ class LivePlotter:
 
     def plot(
         self,
-        y_data: np.ndarray,
-        x_data: Optional[np.ndarray] = None,
+        image_data: np.ndarray,
         title: Optional[str] = None,
-        xlabel: Optional[str] = None,
-        ylabel: Optional[str] = None,
     ) -> None:
         """Plot 1D data"""
-        assert_equals(len(y_data.shape), 1)
+        image_data = preprocess_image_data_if_needed(image_data=image_data)
 
-        if x_data is None:
-            x_data = np.arange(len(y_data))
-
-        assert x_data is not None
-        assert_equals(x_data.shape, y_data.shape)
-
-        plot_helper(
+        plot_images_helper(
             fig=self.fig,
-            x_data_list=[x_data],
-            y_data_list=[y_data],
+            image_data_list=[image_data],
             n_rows=1,
             n_cols=1,
             titles=[self.default_title if title is None else title],
-            xlabels=[self.default_xlabel if xlabel is None else xlabel],
-            ylabels=[self.default_ylabel if ylabel is None else ylabel],
         )
 
     def _save_to_file(self) -> None:
@@ -135,18 +114,14 @@ class LivePlotter:
         sys.excepthook = exception_hook
 
 
-class LivePlotterGrid:
+class LiveImagePlotterGrid:
     def __init__(
         self,
         default_title: Union[str, List[str]] = "",
-        default_xlabel: Union[str, List[str]] = "",
-        default_ylabel: Union[str, List[str]] = "",
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
         self.default_title = default_title
-        self.default_xlabel = default_xlabel
-        self.default_ylabel = default_ylabel
         self.save_to_file_on_close = save_to_file_on_close
         self.save_to_file_on_exception = save_to_file_on_exception
 
@@ -158,27 +133,18 @@ class LivePlotterGrid:
 
     def plot_grid(
         self,
-        y_data_list: List[np.ndarray],
-        x_data_list: Optional[List[np.ndarray]] = None,
+        image_data_list: List[np.ndarray],
         n_rows: Optional[int] = None,
         n_cols: Optional[int] = None,
         title: Optional[Union[str, List[str]]] = None,
-        xlabel: Optional[Union[str, List[str]]] = None,
-        ylabel: Optional[Union[str, List[str]]] = None,
     ) -> None:
         """Plot multiple 1D datas in a grid"""
-        for y_data in y_data_list:
-            assert_equals(len(y_data.shape), 1)
+        image_data_list = [
+            preprocess_image_data_if_needed(image_data=image_data)
+            for image_data in image_data_list
+        ]
 
-        if x_data_list is None:
-            x_data_list = [np.arange(len(y_data)) for y_data in y_data_list]
-
-        assert x_data_list is not None
-        assert_equals(len(x_data_list), len(y_data_list))
-        for x_data, y_data in zip(x_data_list, y_data_list):
-            assert_equals(x_data.shape, y_data.shape)
-
-        n_plots = len(x_data_list)
+        n_plots = len(image_data_list)
 
         # Infer n_rows and n_cols if not given
         if n_rows is None and n_cols is None:
@@ -194,24 +160,13 @@ class LivePlotterGrid:
             str_or_list_str=(title if title is not None else self.default_title),
             fixed_length=n_plots,
         )
-        xlabels = convert_to_list_str_fixed_len(
-            str_or_list_str=(xlabel if xlabel is not None else self.default_xlabel),
-            fixed_length=n_plots,
-        )
-        ylabels = convert_to_list_str_fixed_len(
-            str_or_list_str=(ylabel if ylabel is not None else self.default_ylabel),
-            fixed_length=n_plots,
-        )
 
-        plot_helper(
+        plot_images_helper(
             fig=self.fig,
-            x_data_list=x_data_list,
-            y_data_list=y_data_list,
+            image_data_list=image_data_list,
             n_rows=n_rows,
             n_cols=n_cols,
             titles=titles,
-            xlabels=xlabels,
-            ylabels=ylabels,
         )
 
     def _save_to_file(self) -> None:
@@ -242,21 +197,41 @@ class LivePlotterGrid:
 def main() -> None:
     import time
 
-    live_plotter = LivePlotter(default_title="sin")
+    N = 25
+
+    live_plotter = LiveImagePlotter(default_title="sin")
 
     x_data = []
-    for i in range(25):
+    for i in range(N):
         x_data.append(0.5 * i)
-        live_plotter.plot(x_data=np.array(x_data), y_data=np.sin(x_data))
+        image_data = (
+            np.sin(x_data)[None, ...]
+            .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+            .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
+        )
+        live_plotter.plot(image_data=scale_image(image_data, min_val=-1.0, max_val=1.0))
 
     time.sleep(2)
 
-    live_plotter_grid = LivePlotterGrid(default_title="sin")
+    live_plotter_grid = LiveImagePlotterGrid(default_title="sin")
     x_data = []
-    for i in range(25):
+    for i in range(N):
         x_data.append(i)
+        image_data_1 = (
+            np.sin(x_data)[None, ...]
+            .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+            .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
+        )
+        image_data_2 = (
+            np.cos(x_data)[None, ...]
+            .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+            .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
+        )
         live_plotter_grid.plot_grid(
-            y_data_list=[np.sin(x_data), np.cos(x_data)],
+            image_data_list=[
+                scale_image(image_data_1, min_val=-1.0, max_val=1.0),
+                image_data_2,
+            ],
             title=["sin", "cos"],
         )
 
@@ -270,15 +245,24 @@ def main() -> None:
         "ln(2^x)": [],
     }
     plot_names = list(y_data_dict.keys())
-    for i in range(25):
+    for i in range(N):
         y_data_dict["exp(-x/10)"].append(np.exp(-i / 10))
         y_data_dict["ln(x + 1)"].append(np.log(i + 1))
         y_data_dict["x^2"].append(np.power(i, 2))
         y_data_dict["4x^4"].append(4 * np.power(i, 4))
         y_data_dict["ln(2^x)"].append(np.log(np.power(2, i)))
 
+        image_data_list = [
+            scale_image(
+                np.array(y_data_dict[plot_name])[None, ...]
+                .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+                .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
+            )
+            for plot_name in plot_names
+        ]
+
         live_plotter_grid.plot_grid(
-            y_data_list=[np.array(y_data_dict[plot_name]) for plot_name in plot_names],
+            image_data_list=image_data_list,
             title=plot_names,
         )
 

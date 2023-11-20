@@ -3,10 +3,10 @@ from typing import List
 import numpy as np
 import sys
 
-from live_plotter.fast_live_plotter_core import FastLivePlotterGrid
+from live_plotter.live_image_plotter_core import LiveImagePlotterGrid
 
 
-class FastLivePlotterGridSeparateProcess:
+class LiveImagePlotterGridSeparateProcess:
     def __init__(
         self,
         plot_names: List[str],
@@ -15,9 +15,8 @@ class FastLivePlotterGridSeparateProcess:
     ) -> None:
         self.plot_names = plot_names
 
-        self.live_plotter = FastLivePlotterGrid.from_desired_n_plots(
-            title=plot_names,
-            desired_n_plots=len(plot_names),
+        self.live_image_plotter = LiveImagePlotterGrid(
+            default_title=plot_names,
             save_to_file_on_close=save_to_file_on_close,
             save_to_file_on_exception=save_to_file_on_exception,
         )
@@ -42,8 +41,8 @@ class FastLivePlotterGridSeparateProcess:
             self.update_event.wait()
             self.update_event.clear()
 
-            self.live_plotter.plot_grid(
-                y_data_list=[
+            self.live_image_plotter.plot_grid(
+                image_data_list=[
                     np.array(self.data_dict[plot_name]) for plot_name in self.plot_names
                 ],
             )
@@ -70,31 +69,48 @@ def main() -> None:
     SIMULATED_COMPUTATION_TIME_S = 0.1
     OPTIMAL_TIME_S = N_ITERS * SIMULATED_COMPUTATION_TIME_S
 
+    DEFAULT_IMAGE_HEIGHT, DEFAULT_IMAGE_WIDTH = 100, 100
+
     # Slower when plotting is on same process
-    live_plotter = FastLivePlotterGrid.from_desired_n_plots(
-        title=["sin", "cos"], desired_n_plots=2
-    )
+    live_image_plotter = LiveImagePlotterGrid(default_title=["sin", "cos"])
     x_data = []
     start_time_same_process = time.time()
     for i in range(N_ITERS):
         x_data.append(i)
         time.sleep(SIMULATED_COMPUTATION_TIME_S)
-        live_plotter.plot_grid(
-            y_data_list=[np.sin(x_data), np.cos(x_data)],
+        live_image_plotter.plot_grid(
+            image_data_list=[
+                np.sin(x_data)[None, ...]
+                .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+                .repeat(DEFAULT_IMAGE_WIDTH, 1),
+                np.cos(x_data)[None, ...]
+                .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+                .repeat(DEFAULT_IMAGE_WIDTH, 1),
+            ]
         )
     time_taken_same_process = time.time() - start_time_same_process
 
     # Faster when plotting is on separate process
-    live_plotter_separate_process = FastLivePlotterGridSeparateProcess(
+    live_image_plotter_separate_process = LiveImagePlotterGridSeparateProcess(
         plot_names=["sin", "cos"]
     )
-    live_plotter_separate_process.start()
+    live_image_plotter_separate_process.start()
+    x_data = []
     start_time_separate_process = time.time()
     for i in range(N_ITERS):
+        x_data.append(i)
         time.sleep(SIMULATED_COMPUTATION_TIME_S)
-        live_plotter_separate_process.data_dict["sin"].append(np.sin(i))
-        live_plotter_separate_process.data_dict["cos"].append(np.cos(i))
-        live_plotter_separate_process.update()
+        live_image_plotter_separate_process.data_dict["sin"] = (
+            np.sin(x_data)[None, ...]
+            .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+            .repeat(DEFAULT_IMAGE_WIDTH, 1)
+        )
+        live_image_plotter_separate_process.data_dict["cos"] = (
+            np.cos(x_data)[None, ...]
+            .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+            .repeat(DEFAULT_IMAGE_WIDTH, 1)
+        )
+        live_image_plotter_separate_process.update()
     time_taken_separate_process = time.time() - start_time_separate_process
 
     print(f"Time taken same process: {round(time_taken_same_process, 1)} s")
