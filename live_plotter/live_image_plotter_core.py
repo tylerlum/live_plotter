@@ -44,6 +44,7 @@ def plot_images_helper(
 
         validate_image_data(image_data=image_data_list[i])
         ax.imshow(image_data_list[i])
+        ax.grid(False)
         if titles is not None:
             adjusted_title = (
                 " ".join([titles[i], f"(Plot {i})"]) if n_plots > 1 else titles[i]

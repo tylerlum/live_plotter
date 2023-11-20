@@ -45,6 +45,12 @@ def fast_plot_images_helper(
         validate_image_data(image_data=image_data)
         axes_image.set_data(image_data)
 
+        x_min, x_max = 0, image_data.shape[1]
+        y_min, y_max = 0, image_data.shape[0]
+        axes_image.set_extent((x_min, x_max, y_min, y_max))
+        ax.set_xlim(left=x_min, right=x_max)
+        ax.set_ylim(bottom=y_min, top=y_max)
+
     fig.tight_layout()
     plt.pause(0.001)
 
