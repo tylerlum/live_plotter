@@ -1,5 +1,8 @@
 from __future__ import annotations
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
+from matplotlib.axes import Axes
 import numpy as np
 from typing import Union, List, Optional, Tuple
 import math
@@ -27,22 +30,21 @@ def compute_axes_min_max(axes_min: float, axes_max: float) -> Tuple[float, float
 
 
 def fast_plot_helper(
-    fig: plt.Figure,
+    fig: Figure,
     x_data_list: List[np.ndarray],
     y_data_list: List[np.ndarray],
-    n_rows: int,
-    n_cols: int,
-    axes: List[plt.Axes],
-    lines: List[plt.Line2D],
+    axes: List[Axes],
+    lines: List[Line2D],
 ) -> None:
     """Plot data on existing figure onto existing axes and lines"""
     # Shape checks
     n_plots = len(x_data_list)
     assert_equals(len(y_data_list), n_plots)
-    assert n_plots <= n_rows * n_cols, f"{n_plots} > {n_rows} * {n_cols}"
 
-    assert_equals(len(lines), n_rows * n_cols)
-    assert_equals(len(axes), n_rows * n_cols)
+    max_n_plots = len(axes)
+    assert_equals(len(lines), max_n_plots)
+
+    assert n_plots <= max_n_plots, f"{n_plots} > {max_n_plots}"
 
     for i in range(n_plots):
         line, ax = lines[i], axes[i]
@@ -71,8 +73,8 @@ class FastLivePlotter:
     def __init__(
         self,
         title: str = "",
-        xlabel: str = "x",
-        ylabel: str = "y",
+        xlabel: str = "",
+        ylabel: str = "",
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
@@ -120,8 +122,6 @@ class FastLivePlotter:
             fig=self.fig,
             x_data_list=[x_data],
             y_data_list=[y_data],
-            n_rows=self.n_rows,
-            n_cols=self.n_cols,
             axes=self.axes,
             lines=self.lines,
         )
@@ -155,8 +155,8 @@ class FastLivePlotterGrid:
     def __init__(
         self,
         title: Union[str, List[str]] = "",
-        xlabel: Union[str, List[str]] = "x",
-        ylabel: Union[str, List[str]] = "y",
+        xlabel: Union[str, List[str]] = "",
+        ylabel: Union[str, List[str]] = "",
         n_rows: int = 1,
         n_cols: int = 1,
         save_to_file_on_close: bool = False,
@@ -250,8 +250,6 @@ class FastLivePlotterGrid:
             fig=self.fig,
             x_data_list=x_data_list,
             y_data_list=y_data_list,
-            n_rows=self.n_rows,
-            n_cols=self.n_cols,
             axes=self.axes,
             lines=self.lines,
         )

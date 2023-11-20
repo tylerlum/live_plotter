@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import numpy as np
 from typing import Optional, List, Union
 import math
@@ -17,7 +18,7 @@ sns.set_theme()
 
 
 def plot_helper(
-    fig: plt.Figure,
+    fig: Figure,
     x_data_list: List[np.ndarray],
     y_data_list: List[np.ndarray],
     n_rows: int,
@@ -64,8 +65,8 @@ class LivePlotter:
     def __init__(
         self,
         default_title: str = "",
-        default_xlabel: str = "x",
-        default_ylabel: str = "y",
+        default_xlabel: str = "",
+        default_ylabel: str = "",
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
@@ -138,8 +139,8 @@ class LivePlotterGrid:
     def __init__(
         self,
         default_title: Union[str, List[str]] = "",
-        default_xlabel: Union[str, List[str]] = "x",
-        default_ylabel: Union[str, List[str]] = "y",
+        default_xlabel: Union[str, List[str]] = "",
+        default_ylabel: Union[str, List[str]] = "",
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
