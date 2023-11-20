@@ -12,3 +12,4 @@ from .live_image_plotter_grid_separate_process_core import (
 from .fast_live_image_plotter_grid_separate_process_core import (
     FastLiveImagePlotterGridSeparateProcess,
 )
+from .utils import scale_image
