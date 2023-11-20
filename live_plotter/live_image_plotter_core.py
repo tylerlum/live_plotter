@@ -1,10 +1,7 @@
-from __future__ import annotations
 import matplotlib.pyplot as plt
-from matplotlib.image import AxesImage
 from matplotlib.figure import Figure
-from matplotlib.axes import Axes
 import numpy as np
-from typing import Union, List
+from typing import Optional, List, Union
 import math
 import sys
 
@@ -16,66 +13,61 @@ from live_plotter.utils import (
     convert_to_list_str_fixed_len,
     DEFAULT_IMAGE_HEIGHT,
     DEFAULT_IMAGE_WIDTH,
-    DEFAULT_IMAGE_SHAPE,
     preprocess_image_data_if_needed,
     validate_image_data,
     scale_image,
 )
 
+
 sns.set_theme()
 
 
-def fast_plot_images_helper(
+def plot_images_helper(
     fig: Figure,
     image_data_list: List[np.ndarray],
-    axes: List[Axes],
-    axes_images: List[AxesImage],
+    n_rows: int,
+    n_cols: int,
+    titles: Optional[List[str]],
 ) -> None:
-    """Plot data on existing figure onto existing axes and axes_images"""
-    # Shape checks
+    """Plot data on existing figure"""
     n_plots = len(image_data_list)
-    max_n_plots = len(axes)
-    assert_equals(len(axes_images), max_n_plots)
-    assert n_plots <= max_n_plots, f"{n_plots} > {max_n_plots}"
+    assert n_plots <= n_rows * n_cols, f"{n_plots} > {n_rows} * {n_cols}"
+
+    if titles is not None:
+        assert_equals(len(titles), n_plots)
+
+    plt.clf()
 
     for i in range(n_plots):
-        axes_image, ax = axes_images[i], axes[i]
-        image_data = image_data_list[i]
+        ax_idx = i + 1
+        ax = fig.add_subplot(n_rows, n_cols, ax_idx)
 
-        validate_image_data(image_data=image_data)
-        axes_image.set_data(image_data)
+        validate_image_data(image_data=image_data_list[i])
+        ax.imshow(image_data_list[i])
+        if titles is not None:
+            adjusted_title = (
+                " ".join([titles[i], f"(Plot {i})"]) if n_plots > 1 else titles[i]
+            )
+            ax.set_title(adjusted_title)
 
     fig.tight_layout()
+    fig.canvas.draw()
     plt.pause(0.001)
 
 
-class FastLiveImagePlotter:
+class LiveImagePlotter:
     def __init__(
         self,
-        title: str = "",
+        default_title: str = "",
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
-        self.title = title
+        self.default_title = default_title
         self.save_to_file_on_close = save_to_file_on_close
         self.save_to_file_on_exception = save_to_file_on_exception
 
-        self.n_rows = 1
-        self.n_cols = 1
-        self.n_plots = self.n_rows * self.n_cols
-        plt.show(block=False)
-
-        ax_idx = 1
         self.fig = plt.figure()
-        ax = self.fig.add_subplot(self.n_rows, self.n_cols, ax_idx)
-        ax.set_title(title)
-        ax.grid(False)
-        self.axes = [ax]
-        self.axes_images = [ax.imshow(np.zeros(DEFAULT_IMAGE_SHAPE))]
-
-        self.fig.tight_layout()
-        self.fig.canvas.draw()
-        plt.pause(0.001)
+        plt.show(block=False)
 
         if self.save_to_file_on_exception:
             self._setup_exception_hook()
@@ -83,19 +75,23 @@ class FastLiveImagePlotter:
     def plot(
         self,
         image_data: np.ndarray,
+        title: Optional[str] = None,
     ) -> None:
+        """Plot 1D data"""
         image_data = preprocess_image_data_if_needed(image_data=image_data)
-        fast_plot_images_helper(
+
+        plot_images_helper(
             fig=self.fig,
             image_data_list=[image_data],
-            axes=self.axes,
-            axes_images=self.axes_images,
+            n_rows=1,
+            n_cols=1,
+            titles=[self.default_title if title is None else title],
         )
 
     def _save_to_file(self) -> None:
         filename = (
-            f"{datetime_str()}_{self.title}.png"
-            if len(self.title) > 0
+            f"{datetime_str()}_{self.default_title}.png"
+            if len(self.default_title) > 0
             else f"{datetime_str()}.png"
         )
         print(f"Saving to {filename}")
@@ -117,87 +113,65 @@ class FastLiveImagePlotter:
         sys.excepthook = exception_hook
 
 
-class FastLiveImagePlotterGrid:
+class LiveImagePlotterGrid:
     def __init__(
         self,
-        title: Union[str, List[str]] = "",
-        n_rows: int = 1,
-        n_cols: int = 1,
+        default_title: Union[str, List[str]] = "",
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
-        self.n_rows = n_rows
-        self.n_cols = n_cols
+        self.default_title = default_title
         self.save_to_file_on_close = save_to_file_on_close
         self.save_to_file_on_exception = save_to_file_on_exception
-        self.n_plots = n_rows * n_cols
-
-        self.titles = convert_to_list_str_fixed_len(
-            str_or_list_str=title, fixed_length=self.n_plots
-        )
-        assert len(self.titles) == self.n_plots
-
-        plt.show(block=False)
 
         self.fig = plt.figure()
-        self.axes = []
-        self.axes_images = []
-        for i, _title in enumerate(self.titles):
-            ax_idx = i + 1
-            ax = self.fig.add_subplot(n_rows, n_cols, ax_idx)
-            adjusted_title = (
-                " ".join([_title, f"(Plot {i})"]) if self.n_plots > 1 else _title
-            )
-            ax.set_title(adjusted_title)
-            ax.grid(False)
-            axes_image = ax.imshow(np.zeros(DEFAULT_IMAGE_SHAPE))
-            self.axes.append(ax)
-            self.axes_images.append(axes_image)
-        self.fig.tight_layout()
-        self.fig.canvas.draw()
-        plt.pause(0.001)
+        plt.show(block=False)
 
         if self.save_to_file_on_exception:
             self._setup_exception_hook()
 
-    @classmethod
-    def from_desired_n_plots(
-        cls,
-        title: Union[str, List[str]] = "",
-        save_to_file_on_close: bool = False,
-        save_to_file_on_exception: bool = False,
-        desired_n_plots: int = 1,
-    ) -> FastLiveImagePlotterGrid:
-        n_rows = math.ceil(math.sqrt(desired_n_plots))
-        n_cols = math.ceil(desired_n_plots / n_rows)
-
-        return cls(
-            title=title,
-            n_rows=n_rows,
-            n_cols=n_cols,
-            save_to_file_on_close=save_to_file_on_close,
-            save_to_file_on_exception=save_to_file_on_exception,
-        )
-
     def plot_grid(
         self,
         image_data_list: List[np.ndarray],
+        n_rows: Optional[int] = None,
+        n_cols: Optional[int] = None,
+        title: Optional[Union[str, List[str]]] = None,
     ) -> None:
+        """Plot multiple 1D datas in a grid"""
         image_data_list = [
             preprocess_image_data_if_needed(image_data=image_data)
             for image_data in image_data_list
         ]
-        fast_plot_images_helper(
+
+        n_plots = len(image_data_list)
+
+        # Infer n_rows and n_cols if not given
+        if n_rows is None and n_cols is None:
+            n_rows = math.ceil(math.sqrt(n_plots))
+            n_cols = math.ceil(n_plots / n_rows)
+        elif n_cols is None:
+            assert n_rows is not None
+            n_cols = math.ceil(n_plots / n_rows)
+        elif n_rows is None:
+            n_rows = math.ceil(n_plots / n_cols)
+
+        titles = convert_to_list_str_fixed_len(
+            str_or_list_str=(title if title is not None else self.default_title),
+            fixed_length=n_plots,
+        )
+
+        plot_images_helper(
             fig=self.fig,
             image_data_list=image_data_list,
-            axes=self.axes,
-            axes_images=self.axes_images,
+            n_rows=n_rows,
+            n_cols=n_cols,
+            titles=titles,
         )
 
     def _save_to_file(self) -> None:
         filename = (
-            f"{datetime_str()}_{self.titles}.png"
-            if len("".join(self.titles)) > 0
+            f"{datetime_str()}_{self.default_title}.png"
+            if len(self.default_title) > 0
             else f"{datetime_str()}.png"
         )
         print(f"Saving to {filename}")
@@ -222,7 +196,7 @@ class FastLiveImagePlotterGrid:
 def main() -> None:
     import time
 
-    live_plotter = FastLiveImagePlotter(title="sin")
+    live_plotter = LiveImagePlotter(default_title="sin")
 
     x_data = []
     for i in range(25):
@@ -236,9 +210,7 @@ def main() -> None:
 
     time.sleep(2)
 
-    live_plotter_grid = FastLiveImagePlotterGrid(
-        title=["sin", "cos"], n_rows=2, n_cols=1
-    )
+    live_plotter_grid = LiveImagePlotterGrid(default_title="sin")
     x_data = []
     for i in range(25):
         x_data.append(i)
@@ -257,6 +229,7 @@ def main() -> None:
                 scale_image(image_data_1, min_val=-1.0, max_val=1.0),
                 image_data_2,
             ],
+            title=["sin", "cos"],
         )
 
     time.sleep(2)
@@ -269,9 +242,6 @@ def main() -> None:
         "ln(2^x)": [],
     }
     plot_names = list(y_data_dict.keys())
-    live_plotter_grid = FastLiveImagePlotterGrid.from_desired_n_plots(
-        title=plot_names, desired_n_plots=len(plot_names)
-    )
     for i in range(25):
         y_data_dict["exp(-x/10)"].append(np.exp(-i / 10))
         y_data_dict["ln(x + 1)"].append(np.log(i + 1))
@@ -287,8 +257,10 @@ def main() -> None:
             )
             for plot_name in plot_names
         ]
+
         live_plotter_grid.plot_grid(
             image_data_list=image_data_list,
+            title=plot_names,
         )
 
 
