@@ -51,7 +51,7 @@ def scale_image(image_data: np.ndarray, min_val: Optional[float] = None, max_val
     if max_val is None:
         max_val = image_data.max()
 
-    assert min_val < max_val, f"min_val = {min_val}, max_val = {max_val}"
+    assert min_val <= max_val, f"min_val = {min_val}, max_val = {max_val}"
 
     if np.issubdtype(image_data.dtype, np.floating):
         output_image_data = (image_data - min_val) / (max_val - min_val + eps)
@@ -314,7 +314,7 @@ def main() -> None:
         y_data_dict["ln(2^x)"].append(np.log(np.power(2, i)))
 
         image_data_list = [
-            np.array(y_data_dict[plot_name])[None, ...].repeat(DEFAULT_IMAGE_HEIGHT, 1)
+            scale_image(np.array(y_data_dict[plot_name])[None, ...].repeat(DEFAULT_IMAGE_HEIGHT, 0).repeat(DEFAULT_IMAGE_WIDTH, 1)[..., None].repeat(3, 2))
             for plot_name in plot_names
         ]
         live_plotter_grid.plot_grid(
