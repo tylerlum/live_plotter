@@ -29,12 +29,14 @@ def preprocess_image_data_if_needed(image_data: np.ndarray) -> np.ndarray:
     NUM_RGB = 3
     NUM_RGBA = 4
     if len(image_data.shape) == 2:
+        print(f"WARNING: image_data.shape = {image_data.shape}, assuming RGB")
         image_data = image_data[..., None].repeat(NUM_RGB, axis=-1)
 
     channels = image_data.shape[-1]
     assert channels in [NUM_RGB, NUM_RGBA], f"channels = {channels}"
 
     if not is_valid_image_data_content(image_data=image_data):
+        print(f"WARNING: image_data range in [{image_data.min()}, {image_data.max()}], rescaling")
         image_data = scale_image(image_data=image_data)
 
     return image_data
