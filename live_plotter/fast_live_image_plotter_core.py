@@ -35,7 +35,9 @@ def preprocess_image_data_if_needed(image_data: np.ndarray) -> np.ndarray:
     assert channels in [NUM_RGB, NUM_RGBA], f"channels = {channels}"
 
     if not is_valid_image_data_content(image_data=image_data):
-        print(f"WARNING: image_data range in [{image_data.min()}, {image_data.max()}], rescaling")
+        print(
+            f"WARNING: image_data range in [{image_data.min()}, {image_data.max()}], rescaling"
+        )
         image_data = scale_image(image_data=image_data)
 
     return image_data
@@ -80,6 +82,7 @@ def validate_image_data(image_data: np.ndarray) -> None:
     assert channel_dim in [NUM_RGB, NUM_RGBA], f"channel_dim = {channel_dim}"
 
     validate_image_data_content(image_data=image_data)
+
 
 def scale_image(
     image_data: np.ndarray,
@@ -326,8 +329,7 @@ def main() -> None:
         image_data = (
             np.sin(x_data)[None, ...]
             .repeat(DEFAULT_IMAGE_HEIGHT, 0)
-            .repeat(DEFAULT_IMAGE_WIDTH, 1)[..., None]
-            .repeat(3, 2)
+            .repeat(DEFAULT_IMAGE_WIDTH, 1)
         )
         live_plotter.plot(image_data=scale_image(image_data, min_val=-1.0, max_val=1.0))
 
