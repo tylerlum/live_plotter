@@ -115,6 +115,7 @@ class FastLiveImagePlotter:
         self.fig = plt.figure()
         ax = self.fig.add_subplot(self.n_rows, self.n_cols, ax_idx)
         ax.set_title(title)
+        ax.grid(False)
         self.axes = [ax]
         self.axes_images = [ax.imshow(np.zeros(DEFAULT_IMAGE_SHAPE))]
 
@@ -199,6 +200,7 @@ class FastLiveImagePlotterGrid:
                 " ".join([_title, f"(Plot {i})"]) if self.n_plots > 1 else _title
             )
             ax.set_title(adjusted_title)
+            ax.grid(False)
             axes_image = ax.imshow(np.zeros(DEFAULT_IMAGE_SHAPE))
             self.axes.append(ax)
             self.axes_images.append(axes_image)
