@@ -29,7 +29,6 @@ def preprocess_image_data_if_needed(image_data: np.ndarray) -> np.ndarray:
     NUM_RGB = 3
     NUM_RGBA = 4
     if len(image_data.shape) == 2:
-        print(f"WARNING: image_data.shape = {image_data.shape}, assuming RGB")
         image_data = image_data[..., None].repeat(NUM_RGB, axis=-1)
 
     channels = image_data.shape[-1]
@@ -54,14 +53,7 @@ def is_valid_image_data_content(image_data: np.ndarray) -> bool:
     return False
 
 
-def validate_image_data(image_data: np.ndarray) -> None:
-    assert_equals(len(image_data.shape), 3)
-    channel_dim = image_data.shape[2]
-
-    NUM_RGB = 3
-    NUM_RGBA = 4
-    assert channel_dim in [NUM_RGB, NUM_RGBA], f"channel_dim = {channel_dim}"
-
+def validate_image_data_content(image_data: np.ndarray) -> None:
     # If float, check that values are in [0, 1]
     if np.issubdtype(image_data.dtype, np.floating):
         assert (
@@ -78,6 +70,16 @@ def validate_image_data(image_data: np.ndarray) -> None:
 
     raise ValueError(f"Invalid image_data.dtype = {image_data.dtype}")
 
+
+def validate_image_data(image_data: np.ndarray) -> None:
+    assert_equals(len(image_data.shape), 3)
+    channel_dim = image_data.shape[2]
+
+    NUM_RGB = 3
+    NUM_RGBA = 4
+    assert channel_dim in [NUM_RGB, NUM_RGBA], f"channel_dim = {channel_dim}"
+
+    validate_image_data_content(image_data=image_data)
 
 def scale_image(
     image_data: np.ndarray,
@@ -114,7 +116,7 @@ def scale_image(
         assert (
             max_val >= original_image_max
         ), f"max_val = {max_val}, original_image_max = {original_image_max}"
-        validate_image_data(image_data=output_image_data)
+        validate_image_data_content(image_data=output_image_data)
 
     return output_image_data
 
@@ -340,14 +342,12 @@ def main() -> None:
         image_data_1 = (
             np.sin(x_data)[None, ...]
             .repeat(DEFAULT_IMAGE_HEIGHT, 0)
-            .repeat(DEFAULT_IMAGE_WIDTH, 1)[..., None]
-            .repeat(3, 2)
+            .repeat(DEFAULT_IMAGE_WIDTH, 1)
         )
         image_data_2 = (
             np.cos(x_data)[None, ...]
             .repeat(DEFAULT_IMAGE_HEIGHT, 0)
-            .repeat(DEFAULT_IMAGE_WIDTH, 1)[..., None]
-            .repeat(3, 2)
+            .repeat(DEFAULT_IMAGE_WIDTH, 1)
         )
         live_plotter_grid.plot_grid(
             image_data_list=[
@@ -380,8 +380,7 @@ def main() -> None:
             scale_image(
                 np.array(y_data_dict[plot_name])[None, ...]
                 .repeat(DEFAULT_IMAGE_HEIGHT, 0)
-                .repeat(DEFAULT_IMAGE_WIDTH, 1)[..., None]
-                .repeat(3, 2)
+                .repeat(DEFAULT_IMAGE_WIDTH, 1)
             )
             for plot_name in plot_names
         ]

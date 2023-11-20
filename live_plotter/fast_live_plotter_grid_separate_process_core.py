@@ -1,5 +1,4 @@
 from multiprocessing import Process, Event, Manager
-from multiprocessing.managers import DictProxy
 from typing import List
 import numpy as np
 import sys
