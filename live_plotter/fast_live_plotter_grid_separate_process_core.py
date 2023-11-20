@@ -2,6 +2,7 @@ from multiprocessing import Process, Event, Manager
 from multiprocessing.managers import DictProxy
 from typing import List
 import numpy as np
+import sys
 
 from live_plotter.fast_live_plotter_core import FastLivePlotterGrid
 
@@ -29,6 +30,7 @@ class FastLivePlotterGridSeparateProcess:
 
         self.update_event = Event()
         self.process = Process(target=self._run_task, daemon=True)
+        self._setup_exception_hook()
 
     def start(self) -> None:
         self.process.start()
@@ -46,6 +48,20 @@ class FastLivePlotterGridSeparateProcess:
                     np.array(self.data_dict[plot_name]) for plot_name in self.plot_names
                 ],
             )
+
+    def __del__(self) -> None:
+        print(f"__del__ called ({self.__class__.__name__})")
+        self.process.terminate()
+
+    def _setup_exception_hook(self) -> None:
+        original_excepthook = sys.excepthook
+
+        def exception_hook(exctype, value, traceback):
+            print(f"Exception hook called ({self.__class__.__name__})")
+            self.process.terminate()
+            original_excepthook(exctype, value, traceback)
+
+        sys.excepthook = exception_hook
 
 
 def main() -> None:

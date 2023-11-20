@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Optional, List, Union
 import math
+import sys
 
 import seaborn as sns
 
@@ -123,13 +124,12 @@ class LivePlotter:
             self._save_to_file()
 
     def _setup_exception_hook(self) -> None:
-        # Note this is hacky because excepthook may be overwritten by others
-        import sys
+        original_excepthook = sys.excepthook
 
         def exception_hook(exctype, value, traceback):
-            print("Exception hook called")
+            print(f"Exception hook called ({self.__class__.__name__})")
             self._save_to_file()
-            sys.__excepthook__(exctype, value, traceback)
+            original_excepthook(exctype, value, traceback)
 
         sys.excepthook = exception_hook
 
@@ -228,13 +228,12 @@ class LivePlotterGrid:
             self._save_to_file()
 
     def _setup_exception_hook(self) -> None:
-        # Note this is hacky because excepthook may be overwritten by others
-        import sys
+        original_excepthook = sys.excepthook
 
         def exception_hook(exctype, value, traceback):
-            print("Exception hook called")
+            print(f"Exception hook called ({self.__class__.__name__})")
             self._save_to_file()
-            sys.__excepthook__(exctype, value, traceback)
+            original_excepthook(exctype, value, traceback)
 
         sys.excepthook = exception_hook
 
