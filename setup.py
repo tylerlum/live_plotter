@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 from pathlib import Path
 
-VERSION = "0.0.7"
+VERSION = "0.0.8"
 DESCRIPTION = "Plot live data that updates in real time using matplotlib backend"
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
