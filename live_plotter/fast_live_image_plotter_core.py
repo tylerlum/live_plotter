@@ -227,6 +227,7 @@ class FastLiveImagePlotterGrid:
 
 def main() -> None:
     import time
+
     N = 25
 
     live_plotter = FastLiveImagePlotter(title="sin")

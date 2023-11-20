@@ -72,9 +72,7 @@ def main() -> None:
     DEFAULT_IMAGE_HEIGHT, DEFAULT_IMAGE_WIDTH = 100, 100
 
     # Slower when plotting is on same process
-    live_image_plotter = LiveImagePlotterGrid(
-        default_title=["sin", "cos"]
-    )
+    live_image_plotter = LiveImagePlotterGrid(default_title=["sin", "cos"])
     x_data = []
     start_time_same_process = time.time()
     for i in range(N_ITERS):

@@ -70,9 +70,7 @@ def main() -> None:
     OPTIMAL_TIME_S = N_ITERS * SIMULATED_COMPUTATION_TIME_S
 
     # Slower when plotting is on same process
-    live_plotter = LivePlotterGrid(
-        default_title=["sin", "cos"]
-    )
+    live_plotter = LivePlotterGrid(default_title=["sin", "cos"])
     x_data = []
     start_time_same_process = time.time()
     for i in range(N_ITERS):
