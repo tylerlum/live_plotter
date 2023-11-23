@@ -64,80 +64,6 @@ def plot_helper(
 class LivePlotter:
     def __init__(
         self,
-        default_title: str = "",
-        default_xlabel: str = "",
-        default_ylabel: str = "",
-        save_to_file_on_close: bool = False,
-        save_to_file_on_exception: bool = False,
-    ) -> None:
-        self.default_title = default_title
-        self.default_xlabel = default_xlabel
-        self.default_ylabel = default_ylabel
-        self.save_to_file_on_close = save_to_file_on_close
-        self.save_to_file_on_exception = save_to_file_on_exception
-
-        self.fig = plt.figure()
-        plt.show(block=False)
-
-        if self.save_to_file_on_exception:
-            self._setup_exception_hook()
-
-    def plot(
-        self,
-        y_data: np.ndarray,
-        x_data: Optional[np.ndarray] = None,
-        title: Optional[str] = None,
-        xlabel: Optional[str] = None,
-        ylabel: Optional[str] = None,
-    ) -> None:
-        """Plot 1D data"""
-        assert_equals(len(y_data.shape), 1)
-
-        if x_data is None:
-            x_data = np.arange(len(y_data))
-
-        assert x_data is not None
-        assert_equals(x_data.shape, y_data.shape)
-
-        plot_helper(
-            fig=self.fig,
-            x_data_list=[x_data],
-            y_data_list=[y_data],
-            n_rows=1,
-            n_cols=1,
-            titles=[self.default_title if title is None else title],
-            xlabels=[self.default_xlabel if xlabel is None else xlabel],
-            ylabels=[self.default_ylabel if ylabel is None else ylabel],
-        )
-
-    def _save_to_file(self) -> None:
-        filename = (
-            f"{datetime_str()}_{self.default_title}.png"
-            if len(self.default_title) > 0
-            else f"{datetime_str()}.png"
-        )
-        print(f"Saving to {filename}")
-        self.fig.savefig(filename)
-        print(f"Saved to {filename}")
-
-    def __del__(self) -> None:
-        if self.save_to_file_on_close:
-            self._save_to_file()
-
-    def _setup_exception_hook(self) -> None:
-        original_excepthook = sys.excepthook
-
-        def exception_hook(exctype, value, traceback):
-            print(f"Exception hook called ({self.__class__.__name__})")
-            self._save_to_file()
-            original_excepthook(exctype, value, traceback)
-
-        sys.excepthook = exception_hook
-
-
-class LivePlotterGrid:
-    def __init__(
-        self,
         default_title: Union[str, List[str]] = "",
         default_xlabel: Union[str, List[str]] = "",
         default_ylabel: Union[str, List[str]] = "",
@@ -156,7 +82,7 @@ class LivePlotterGrid:
         if self.save_to_file_on_exception:
             self._setup_exception_hook()
 
-    def plot_grid(
+    def plot(
         self,
         y_data_list: List[np.ndarray],
         x_data_list: Optional[List[np.ndarray]] = None,
@@ -243,19 +169,10 @@ def main() -> None:
     import time
 
     live_plotter = LivePlotter(default_title="sin")
-
-    x_data = []
-    for i in range(25):
-        x_data.append(0.5 * i)
-        live_plotter.plot(x_data=np.array(x_data), y_data=np.sin(x_data))
-
-    time.sleep(2)
-
-    live_plotter_grid = LivePlotterGrid(default_title="sin")
     x_data = []
     for i in range(25):
         x_data.append(i)
-        live_plotter_grid.plot_grid(
+        live_plotter.plot(
             y_data_list=[np.sin(x_data), np.cos(x_data)],
             title=["sin", "cos"],
         )
@@ -277,7 +194,7 @@ def main() -> None:
         y_data_dict["4x^4"].append(4 * np.power(i, 4))
         y_data_dict["ln(2^x)"].append(np.log(np.power(2, i)))
 
-        live_plotter_grid.plot_grid(
+        live_plotter.plot(
             y_data_list=[np.array(y_data_dict[plot_name]) for plot_name in plot_names],
             title=plot_names,
         )

@@ -72,88 +72,6 @@ def fast_plot_helper(
 class FastLivePlotter:
     def __init__(
         self,
-        title: str = "",
-        xlabel: str = "",
-        ylabel: str = "",
-        save_to_file_on_close: bool = False,
-        save_to_file_on_exception: bool = False,
-    ) -> None:
-        self.title = title
-        self.xlabel = xlabel
-        self.ylabel = ylabel
-        self.save_to_file_on_close = save_to_file_on_close
-        self.save_to_file_on_exception = save_to_file_on_exception
-
-        self.n_rows = 1
-        self.n_cols = 1
-        self.n_plots = self.n_rows * self.n_cols
-        plt.show(block=False)
-
-        ax_idx = 1
-        self.fig = plt.figure()
-        ax = self.fig.add_subplot(self.n_rows, self.n_cols, ax_idx)
-        ax.set_title(title)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        self.axes = [ax]
-        self.lines = [ax.plot([], [])[0]]
-
-        self.fig.tight_layout()
-        self.fig.canvas.draw()
-        plt.pause(0.001)
-
-        if self.save_to_file_on_exception:
-            self._setup_exception_hook()
-
-    def plot(
-        self,
-        y_data: np.ndarray,
-        x_data: Optional[np.ndarray] = None,
-    ) -> None:
-        assert_equals(len(y_data.shape), 1)
-
-        if x_data is None:
-            x_data = np.arange(len(y_data))
-
-        assert x_data is not None
-        assert_equals(x_data.shape, y_data.shape)
-
-        fast_plot_helper(
-            fig=self.fig,
-            x_data_list=[x_data],
-            y_data_list=[y_data],
-            axes=self.axes,
-            lines=self.lines,
-        )
-
-    def _save_to_file(self) -> None:
-        filename = (
-            f"{datetime_str()}_{self.title}.png"
-            if len(self.title) > 0
-            else f"{datetime_str()}.png"
-        )
-        print(f"Saving to {filename}")
-        self.fig.savefig(filename)
-        print(f"Saved to {filename}")
-
-    def __del__(self) -> None:
-        if self.save_to_file_on_close:
-            self._save_to_file()
-
-    def _setup_exception_hook(self) -> None:
-        original_excepthook = sys.excepthook
-
-        def exception_hook(exctype, value, traceback):
-            print(f"Exception hook called ({self.__class__.__name__})")
-            self._save_to_file()
-            original_excepthook(exctype, value, traceback)
-
-        sys.excepthook = exception_hook
-
-
-class FastLivePlotterGrid:
-    def __init__(
-        self,
         title: Union[str, List[str]] = "",
         xlabel: Union[str, List[str]] = "",
         ylabel: Union[str, List[str]] = "",
@@ -216,7 +134,7 @@ class FastLivePlotterGrid:
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
         desired_n_plots: int = 1,
-    ) -> FastLivePlotterGrid:
+    ) -> FastLivePlotter:
         n_rows = math.ceil(math.sqrt(desired_n_plots))
         n_cols = math.ceil(desired_n_plots / n_rows)
 
@@ -230,7 +148,7 @@ class FastLivePlotterGrid:
             save_to_file_on_exception=save_to_file_on_exception,
         )
 
-    def plot_grid(
+    def plot(
         self,
         y_data_list: List[np.ndarray],
         x_data_list: Optional[List[np.ndarray]] = None,
@@ -282,20 +200,11 @@ class FastLivePlotterGrid:
 def main() -> None:
     import time
 
-    live_plotter = FastLivePlotter(title="sin")
-
-    x_data = []
-    for i in range(25):
-        x_data.append(0.5 * i)
-        live_plotter.plot(x_data=np.array(x_data), y_data=np.sin(x_data))
-
-    time.sleep(2)
-
-    live_plotter_grid = FastLivePlotterGrid(title=["sin", "cos"], n_rows=2, n_cols=1)
+    live_plotter = FastLivePlotter(title=["sin", "cos"], n_rows=2, n_cols=1)
     x_data = []
     for i in range(25):
         x_data.append(i)
-        live_plotter_grid.plot_grid(
+        live_plotter.plot(
             y_data_list=[np.sin(x_data), np.cos(x_data)],
         )
 
@@ -309,7 +218,7 @@ def main() -> None:
         "ln(2^x)": [],
     }
     plot_names = list(y_data_dict.keys())
-    live_plotter_grid = FastLivePlotterGrid.from_desired_n_plots(
+    live_plotter = FastLivePlotter.from_desired_n_plots(
         title=plot_names, desired_n_plots=len(plot_names)
     )
     for i in range(25):
@@ -319,7 +228,7 @@ def main() -> None:
         y_data_dict["4x^4"].append(4 * np.power(i, 4))
         y_data_dict["ln(2^x)"].append(np.log(np.power(2, i)))
 
-        live_plotter_grid.plot_grid(
+        live_plotter.plot(
             y_data_list=[np.array(y_data_dict[plot_name]) for plot_name in plot_names],
         )
 

@@ -1,15 +1,15 @@
-from .live_plotter_core import LivePlotter, LivePlotterGrid
-from .fast_live_plotter_core import FastLivePlotter, FastLivePlotterGrid
-from .live_plotter_grid_separate_process_core import LivePlotterGridSeparateProcess
+from .live_plotter_core import LivePlotter
+from .fast_live_plotter_core import FastLivePlotter
+from .live_plotter_grid_separate_process_core import LivePlotterSeparateProcess
 from .fast_live_plotter_grid_separate_process_core import (
-    FastLivePlotterGridSeparateProcess,
+    FastLivePlotterSeparateProcess,
 )
-from .live_image_plotter_core import LiveImagePlotter, LiveImagePlotterGrid
-from .fast_live_image_plotter_core import FastLiveImagePlotter, FastLiveImagePlotterGrid
+from .live_image_plotter_core import LiveImagePlotter
+from .fast_live_image_plotter_core import FastLiveImagePlotter
 from .live_image_plotter_grid_separate_process_core import (
-    LiveImagePlotterGridSeparateProcess,
+    LiveImagePlotterSeparateProcess,
 )
-from .fast_live_image_plotter_grid_separate_process_core import (
-    FastLiveImagePlotterGridSeparateProcess,
+from .fast_live_image_plotter_separate_process_core import (
+    FastLiveImagePlotterSeparateProcess,
 )
 from .utils import scale_image

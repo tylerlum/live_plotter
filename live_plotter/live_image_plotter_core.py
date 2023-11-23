@@ -59,64 +59,6 @@ def plot_images_helper(
 class LiveImagePlotter:
     def __init__(
         self,
-        default_title: str = "",
-        save_to_file_on_close: bool = False,
-        save_to_file_on_exception: bool = False,
-    ) -> None:
-        self.default_title = default_title
-        self.save_to_file_on_close = save_to_file_on_close
-        self.save_to_file_on_exception = save_to_file_on_exception
-
-        self.fig = plt.figure()
-        plt.show(block=False)
-
-        if self.save_to_file_on_exception:
-            self._setup_exception_hook()
-
-    def plot(
-        self,
-        image_data: np.ndarray,
-        title: Optional[str] = None,
-    ) -> None:
-        """Plot 1D data"""
-        image_data = preprocess_image_data_if_needed(image_data=image_data)
-
-        plot_images_helper(
-            fig=self.fig,
-            image_data_list=[image_data],
-            n_rows=1,
-            n_cols=1,
-            titles=[self.default_title if title is None else title],
-        )
-
-    def _save_to_file(self) -> None:
-        filename = (
-            f"{datetime_str()}_{self.default_title}.png"
-            if len(self.default_title) > 0
-            else f"{datetime_str()}.png"
-        )
-        print(f"Saving to {filename}")
-        self.fig.savefig(filename)
-        print(f"Saved to {filename}")
-
-    def __del__(self) -> None:
-        if self.save_to_file_on_close:
-            self._save_to_file()
-
-    def _setup_exception_hook(self) -> None:
-        original_excepthook = sys.excepthook
-
-        def exception_hook(exctype, value, traceback):
-            print(f"Exception hook called ({self.__class__.__name__})")
-            self._save_to_file()
-            original_excepthook(exctype, value, traceback)
-
-        sys.excepthook = exception_hook
-
-
-class LiveImagePlotterGrid:
-    def __init__(
-        self,
         default_title: Union[str, List[str]] = "",
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
@@ -131,7 +73,7 @@ class LiveImagePlotterGrid:
         if self.save_to_file_on_exception:
             self._setup_exception_hook()
 
-    def plot_grid(
+    def plot(
         self,
         image_data_list: List[np.ndarray],
         n_rows: Optional[int] = None,
@@ -200,20 +142,6 @@ def main() -> None:
     N = 25
 
     live_plotter = LiveImagePlotter(default_title="sin")
-
-    x_data = []
-    for i in range(N):
-        x_data.append(0.5 * i)
-        image_data = (
-            np.sin(x_data)[None, ...]
-            .repeat(DEFAULT_IMAGE_HEIGHT, 0)
-            .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
-        )
-        live_plotter.plot(image_data=scale_image(image_data, min_val=-1.0, max_val=1.0))
-
-    time.sleep(2)
-
-    live_plotter_grid = LiveImagePlotterGrid(default_title="sin")
     x_data = []
     for i in range(N):
         x_data.append(i)
@@ -227,7 +155,7 @@ def main() -> None:
             .repeat(DEFAULT_IMAGE_HEIGHT, 0)
             .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
         )
-        live_plotter_grid.plot_grid(
+        live_plotter.plot(
             image_data_list=[
                 scale_image(image_data_1, min_val=-1.0, max_val=1.0),
                 image_data_2,
@@ -261,7 +189,7 @@ def main() -> None:
             for plot_name in plot_names
         ]
 
-        live_plotter_grid.plot_grid(
+        live_plotter.plot(
             image_data_list=image_data_list,
             title=plot_names,
         )
