@@ -158,7 +158,7 @@ def main() -> None:
         live_plotter.plot(
             image_data_list=[
                 scale_image(image_data_1, min_val=-1.0, max_val=1.0),
-                image_data_2,
+                scale_image(image_data_2),
             ],
             title=["sin", "cos"],
         )
