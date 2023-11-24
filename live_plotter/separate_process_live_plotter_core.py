@@ -49,7 +49,9 @@ class SeparateProcessLivePlotter:
                     ],
                 )
         except Exception as e:
-            print(f"Exception in {self.__class__.__name__}: {e}")
+            print(
+                f"Exception (probably expected behavior) in {self.__class__.__name__}: {e}"
+            )
 
     def __del__(self) -> None:
         print(f"__del__ called ({self.__class__.__name__})")
