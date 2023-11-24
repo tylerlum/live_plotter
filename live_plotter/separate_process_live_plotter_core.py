@@ -79,7 +79,7 @@ def main_live_image_plotter() -> None:
 
     # Slower when plotting is on same process
     live_image_plotter = FastLiveImagePlotter.from_desired_n_plots(
-        desired_n_plots=2, title=["sin", "cos"]
+        desired_n_plots=2, titles=["sin", "cos"]
     )
     x_data = []
     start_time_same_process = time.time()
@@ -141,7 +141,7 @@ def main_live_plotter() -> None:
 
     # Slower when plotting is on same process
     live_plotter = FastLivePlotter.from_desired_n_plots(
-        desired_n_plots=2, title=["sin", "cos"]
+        desired_n_plots=2, titles=["sin", "cos"]
     )
     x_data = []
     start_time_same_process = time.time()

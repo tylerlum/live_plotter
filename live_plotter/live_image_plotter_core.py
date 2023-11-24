@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import numpy as np
-from typing import Optional, List, Union
+from typing import Optional, List
 import math
 import sys
 
@@ -46,10 +46,13 @@ def plot_images_helper(
         ax.imshow(image_data_list[i])
         ax.grid(False)
         if titles is not None:
-            adjusted_title = (
-                " ".join([titles[i], f"(Plot {i})"]) if n_plots > 1 else titles[i]
-            )
-            ax.set_title(adjusted_title)
+            PLOT_MODIFIED_TITLE = False
+            if PLOT_MODIFIED_TITLE:
+                ax.set_title(
+                    " ".join([titles[i], f"(Plot {i})"]) if n_plots > 1 else titles[i]
+                )
+            else:
+                ax.set_title(titles[i])
 
     fig.tight_layout()
     fig.canvas.draw()
@@ -59,11 +62,11 @@ def plot_images_helper(
 class LiveImagePlotter:
     def __init__(
         self,
-        default_title: Union[str, List[str]] = "",
+        default_titles: Optional[List[str]] = None,
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
-        self.default_title = default_title
+        self.default_titles = default_titles
         self.save_to_file_on_close = save_to_file_on_close
         self.save_to_file_on_exception = save_to_file_on_exception
 
@@ -78,7 +81,7 @@ class LiveImagePlotter:
         image_data_list: List[np.ndarray],
         n_rows: Optional[int] = None,
         n_cols: Optional[int] = None,
-        title: Optional[Union[str, List[str]]] = None,
+        titles: Optional[List[str]] = None,
     ) -> None:
         """Plot multiple 1D datas in a grid"""
         image_data_list = [
@@ -99,7 +102,7 @@ class LiveImagePlotter:
             n_rows = math.ceil(n_plots / n_cols)
 
         titles = convert_to_list_str_fixed_len(
-            str_or_list_str=(title if title is not None else self.default_title),
+            list_str=(titles if titles is not None else self.default_titles),
             fixed_length=n_plots,
         )
 
@@ -113,8 +116,8 @@ class LiveImagePlotter:
 
     def _save_to_file(self) -> None:
         filename = (
-            f"{datetime_str()}_{self.default_title}.png"
-            if len(self.default_title) > 0
+            f"{datetime_str()}_{self.default_titles}.png"
+            if self.default_titles is not None
             else f"{datetime_str()}.png"
         )
         print(f"Saving to {filename}")
@@ -141,7 +144,7 @@ def main() -> None:
 
     N = 25
 
-    live_plotter = LiveImagePlotter(default_title="sin")
+    live_plotter = LiveImagePlotter()
     x_data = []
     for i in range(N):
         x_data.append(i)
@@ -160,7 +163,7 @@ def main() -> None:
                 scale_image(image_data_1, min_val=-1.0, max_val=1.0),
                 scale_image(image_data_2),
             ],
-            title=["sin", "cos"],
+            titles=["sin", "cos"],
         )
 
     time.sleep(2)
@@ -191,7 +194,7 @@ def main() -> None:
 
         live_plotter.plot(
             image_data_list=image_data_list,
-            title=plot_names,
+            titles=plot_names,
         )
 
 

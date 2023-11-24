@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import numpy as np
-from typing import Optional, List, Union
+from typing import Optional, List
 import math
 import sys
 
@@ -46,11 +46,16 @@ def plot_helper(
         ax = fig.add_subplot(n_rows, n_cols, ax_idx)
 
         ax.plot(x_data_list[i], y_data_list[i])
+
         if titles is not None:
-            adjusted_title = (
-                " ".join([titles[i], f"(Plot {i})"]) if n_plots > 1 else titles[i]
-            )
-            ax.set_title(adjusted_title)
+            PLOT_MODIFIED_TITLE = False
+            if PLOT_MODIFIED_TITLE:
+                ax.set_title(
+                    " ".join([titles[i], f"(Plot {i})"]) if n_plots > 1 else titles[i]
+                )
+            else:
+                ax.set_title(titles[i])
+
         if xlabels is not None:
             ax.set_xlabel(xlabels[i])
         if ylabels is not None:
@@ -64,15 +69,15 @@ def plot_helper(
 class LivePlotter:
     def __init__(
         self,
-        default_title: Union[str, List[str]] = "",
-        default_xlabel: Union[str, List[str]] = "",
-        default_ylabel: Union[str, List[str]] = "",
+        default_titles: Optional[List[str]] = None,
+        default_xlabels: Optional[List[str]] = None,
+        default_ylabels: Optional[List[str]] = None,
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
-        self.default_title = default_title
-        self.default_xlabel = default_xlabel
-        self.default_ylabel = default_ylabel
+        self.default_titles = default_titles
+        self.default_xlabels = default_xlabels
+        self.default_ylabels = default_ylabels
         self.save_to_file_on_close = save_to_file_on_close
         self.save_to_file_on_exception = save_to_file_on_exception
 
@@ -88,9 +93,9 @@ class LivePlotter:
         x_data_list: Optional[List[np.ndarray]] = None,
         n_rows: Optional[int] = None,
         n_cols: Optional[int] = None,
-        title: Optional[Union[str, List[str]]] = None,
-        xlabel: Optional[Union[str, List[str]]] = None,
-        ylabel: Optional[Union[str, List[str]]] = None,
+        titles: Optional[List[str]] = None,
+        xlabels: Optional[List[str]] = None,
+        ylabels: Optional[List[str]] = None,
     ) -> None:
         """Plot multiple 1D datas in a grid"""
         for y_data in y_data_list:
@@ -117,15 +122,15 @@ class LivePlotter:
             n_rows = math.ceil(n_plots / n_cols)
 
         titles = convert_to_list_str_fixed_len(
-            str_or_list_str=(title if title is not None else self.default_title),
+            list_str=(titles if titles is not None else self.default_titles),
             fixed_length=n_plots,
         )
         xlabels = convert_to_list_str_fixed_len(
-            str_or_list_str=(xlabel if xlabel is not None else self.default_xlabel),
+            list_str=(xlabels if xlabels is not None else self.default_xlabels),
             fixed_length=n_plots,
         )
         ylabels = convert_to_list_str_fixed_len(
-            str_or_list_str=(ylabel if ylabel is not None else self.default_ylabel),
+            list_str=(ylabels if ylabels is not None else self.default_ylabels),
             fixed_length=n_plots,
         )
 
@@ -142,8 +147,8 @@ class LivePlotter:
 
     def _save_to_file(self) -> None:
         filename = (
-            f"{datetime_str()}_{self.default_title}.png"
-            if len(self.default_title) > 0
+            f"{datetime_str()}_{self.default_titles}.png"
+            if self.default_titles is not None
             else f"{datetime_str()}.png"
         )
         print(f"Saving to {filename}")
@@ -168,13 +173,13 @@ class LivePlotter:
 def main() -> None:
     import time
 
-    live_plotter = LivePlotter(default_title="sin")
+    live_plotter = LivePlotter()
     x_data = []
     for i in range(25):
         x_data.append(i)
         live_plotter.plot(
             y_data_list=[np.sin(x_data), np.cos(x_data)],
-            title=["sin", "cos"],
+            titles=["sin", "cos"],
         )
 
     time.sleep(2)
@@ -196,7 +201,7 @@ def main() -> None:
 
         live_plotter.plot(
             y_data_list=[np.array(y_data_dict[plot_name]) for plot_name in plot_names],
-            title=plot_names,
+            titles=plot_names,
         )
 
 

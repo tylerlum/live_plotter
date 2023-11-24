@@ -4,7 +4,7 @@ from matplotlib.image import AxesImage
 from matplotlib.figure import Figure
 from matplotlib.axes import Axes
 import numpy as np
-from typing import Union, List
+from typing import List, Optional
 import math
 import sys
 
@@ -58,7 +58,7 @@ def fast_plot_images_helper(
 class FastLiveImagePlotter:
     def __init__(
         self,
-        title: Union[str, List[str]] = "",
+        titles: Optional[List[str]] = None,
         n_rows: int = 1,
         n_cols: int = 1,
         save_to_file_on_close: bool = False,
@@ -71,7 +71,7 @@ class FastLiveImagePlotter:
         self.n_plots = n_rows * n_cols
 
         self.titles = convert_to_list_str_fixed_len(
-            str_or_list_str=title, fixed_length=self.n_plots
+            list_str=titles, fixed_length=self.n_plots
         )
         assert len(self.titles) == self.n_plots
 
@@ -83,10 +83,15 @@ class FastLiveImagePlotter:
         for i, _title in enumerate(self.titles):
             ax_idx = i + 1
             ax = self.fig.add_subplot(n_rows, n_cols, ax_idx)
-            adjusted_title = (
-                " ".join([_title, f"(Plot {i})"]) if self.n_plots > 1 else _title
-            )
-            ax.set_title(adjusted_title)
+
+            PLOT_MODIFIED_TITLE = False
+            if PLOT_MODIFIED_TITLE:
+                ax.set_title(
+                    " ".join([_title, f"(Plot {i})"]) if self.n_plots > 1 else _title
+                )
+            else:
+                ax.set_title(_title)
+
             ax.grid(False)
             axes_image = ax.imshow(np.zeros(DEFAULT_IMAGE_SHAPE))
             self.axes.append(ax)
@@ -101,16 +106,16 @@ class FastLiveImagePlotter:
     @classmethod
     def from_desired_n_plots(
         cls,
-        title: Union[str, List[str]] = "",
+        desired_n_plots: int,
+        titles: Optional[List[str]] = None,
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
-        desired_n_plots: int = 1,
     ) -> FastLiveImagePlotter:
         n_rows = math.ceil(math.sqrt(desired_n_plots))
         n_cols = math.ceil(desired_n_plots / n_rows)
 
         return cls(
-            title=title,
+            titles=titles,
             n_rows=n_rows,
             n_cols=n_cols,
             save_to_file_on_close=save_to_file_on_close,
@@ -162,7 +167,7 @@ def main() -> None:
 
     N = 25
 
-    live_plotter = FastLiveImagePlotter(title=["sin", "cos"], n_rows=2, n_cols=1)
+    live_plotter = FastLiveImagePlotter(titles=["sin", "cos"], n_rows=2, n_cols=1)
     x_data = []
     for i in range(N):
         x_data.append(i)
@@ -194,7 +199,7 @@ def main() -> None:
     }
     plot_names = list(y_data_dict.keys())
     live_plotter = FastLiveImagePlotter.from_desired_n_plots(
-        title=plot_names, desired_n_plots=len(plot_names)
+        titles=plot_names, desired_n_plots=len(plot_names)
     )
     for i in range(N):
         y_data_dict["exp(-x/10)"].append(np.exp(-i / 10))

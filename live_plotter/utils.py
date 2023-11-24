@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Union, Optional
+from typing import List, Optional
 import numpy as np
 
 
@@ -12,15 +12,15 @@ def datetime_str() -> str:
 
 
 def convert_to_list_str_fixed_len(
-    str_or_list_str: Union[str, List[str]], fixed_length: int
+    list_str: Optional[List[str]], fixed_length: int
 ) -> List[str]:
-    if isinstance(str_or_list_str, str):
-        return [str_or_list_str] * fixed_length
+    if list_str is None:
+        return [""] * fixed_length
 
-    if len(str_or_list_str) < fixed_length:
-        return str_or_list_str + [""] * (fixed_length - len(str_or_list_str))
+    if len(list_str) < fixed_length:
+        return list_str + [""] * (fixed_length - len(list_str))
 
-    return str_or_list_str[:fixed_length]
+    return list_str[:fixed_length]
 
 
 DEFAULT_IMAGE_HEIGHT = 100
