@@ -66,7 +66,7 @@ class SeparateProcessLivePlotter:
         sys.excepthook = exception_hook
 
 
-def test_live_image_plotter() -> None:
+def main_live_image_plotter() -> None:
     import time
 
     N_ITERS = 100
@@ -130,7 +130,7 @@ def test_live_image_plotter() -> None:
     assert time_taken_separate_process < time_taken_same_process
 
 
-def test_live_plotter() -> None:
+def main_live_plotter() -> None:
     import time
 
     N_ITERS = 100
@@ -180,9 +180,9 @@ def main() -> None:
     ), "Only one test at a time, errors if both are True"
 
     if TEST_LIVE_IMAGE_PLOTTER:
-        test_live_image_plotter()
+        main_live_image_plotter()
     elif TEST_LIVE_PLOTTER:
-        test_live_plotter()
+        main_live_plotter()
 
 
 if __name__ == "__main__":
