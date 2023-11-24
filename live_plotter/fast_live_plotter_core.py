@@ -35,6 +35,8 @@ def fast_plot_helper(
     y_data_list: List[np.ndarray],
     axes: List[Axes],
     lines: List[Line2D],
+    xlims: Optional[List[Tuple[float, float]]] = None,
+    ylims: Optional[List[Tuple[float, float]]] = None,
 ) -> None:
     """Plot data on existing figure onto existing axes and lines"""
     # Shape checks
@@ -55,15 +57,25 @@ def fast_plot_helper(
 
         line.set_data(x_data, y_data)
 
-        # Handle case when min == max
-        x_min, x_max = compute_axes_min_max(
-            axes_min=np.min(x_data), axes_max=np.max(x_data)
-        )
-        y_min, y_max = compute_axes_min_max(
-            axes_min=np.min(y_data), axes_max=np.max(y_data)
-        )
-        ax.set_xlim(left=x_min, right=x_max)
-        ax.set_ylim(bottom=y_min, top=y_max)
+        if xlims is not None and i < len(xlims):
+            left, right = xlims[i]
+            ax.set_xlim(left=left, right=right)
+        else:
+            # Handle case when min == max
+            x_min, x_max = compute_axes_min_max(
+                axes_min=np.min(x_data), axes_max=np.max(x_data)
+            )
+            ax.set_xlim(left=x_min, right=x_max)
+
+        if ylims is not None and i < len(ylims):
+            bottom, top = ylims[i]
+            ax.set_ylim(bottom=bottom, top=top)
+        else:
+            # Handle case when min == max
+            y_min, y_max = compute_axes_min_max(
+                axes_min=np.min(y_data), axes_max=np.max(y_data)
+            )
+            ax.set_ylim(bottom=y_min, top=y_max)
 
     fig.tight_layout()
     plt.pause(0.001)
@@ -191,6 +203,8 @@ class FastLivePlotter:
             y_data_list=y_data_list,
             axes=self.axes,
             lines=self.lines,
+            xlims=self.xlims,
+            ylims=self.ylims,
         )
 
     def _save_to_file(self) -> None:
