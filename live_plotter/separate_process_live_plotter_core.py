@@ -32,14 +32,17 @@ class SeparateProcessLivePlotter:
         self.update_event.set()
 
     def _run_task(self) -> None:
-        while True:
-            self.update_event.wait()
-            self.update_event.clear()
+        try:
+            while True:
+                self.update_event.wait()
+                self.update_event.clear()
 
-            self.live_plotter.plot(
-                [np.array(self.data_dict[plot_name]) for plot_name in self.plot_names],
-                title=self.plot_names,
-            )
+                self.live_plotter.plot(
+                    [np.array(self.data_dict[plot_name]) for plot_name in self.plot_names],
+                    title=self.plot_names,
+                )
+        except Exception as e:
+            print(f"Exception in {self.__class__.__name__}: {e}")
 
     def __del__(self) -> None:
         print(f"__del__ called ({self.__class__.__name__})")
