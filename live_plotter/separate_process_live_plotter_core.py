@@ -3,14 +3,19 @@ from typing import List, Union
 import numpy as np
 import sys
 
-from live_plotter.live_image_plotter_core import LiveImagePlotter
 from live_plotter.live_plotter_core import LivePlotter
+from live_plotter.live_image_plotter_core import LiveImagePlotter
+from live_plotter.fast_live_plotter_core import FastLivePlotter
+from live_plotter.fast_live_image_plotter_core import FastLiveImagePlotter
+from live_plotter.utils import scale_image
 
 
 class SeparateProcessLivePlotter:
     def __init__(
         self,
-        live_plotter: Union[LivePlotter, LiveImagePlotter],
+        live_plotter: Union[
+            LivePlotter, LiveImagePlotter, FastLivePlotter, FastLiveImagePlotter
+        ],
         plot_names: List[str],
     ) -> None:
         self.live_plotter = live_plotter
@@ -38,8 +43,10 @@ class SeparateProcessLivePlotter:
                 self.update_event.clear()
 
                 self.live_plotter.plot(
-                    [np.array(self.data_dict[plot_name]) for plot_name in self.plot_names],
-                    title=self.plot_names,
+                    [
+                        np.array(self.data_dict[plot_name])
+                        for plot_name in self.plot_names
+                    ],
                 )
         except Exception as e:
             print(f"Exception in {self.__class__.__name__}: {e}")
@@ -69,7 +76,9 @@ def test_live_image_plotter() -> None:
     DEFAULT_IMAGE_HEIGHT, DEFAULT_IMAGE_WIDTH = 100, 100
 
     # Slower when plotting is on same process
-    live_image_plotter = LiveImagePlotter(default_title=["sin", "cos"])
+    live_image_plotter = FastLiveImagePlotter.from_desired_n_plots(
+        desired_n_plots=2, title=["sin", "cos"]
+    )
     x_data = []
     start_time_same_process = time.time()
     for i in range(N_ITERS):
@@ -77,19 +86,23 @@ def test_live_image_plotter() -> None:
         time.sleep(SIMULATED_COMPUTATION_TIME_S)
         live_image_plotter.plot(
             image_data_list=[
-                np.sin(x_data)[None, ...]
-                .repeat(DEFAULT_IMAGE_HEIGHT, 0)
-                .repeat(DEFAULT_IMAGE_WIDTH, 1),
-                np.cos(x_data)[None, ...]
-                .repeat(DEFAULT_IMAGE_HEIGHT, 0)
-                .repeat(DEFAULT_IMAGE_WIDTH, 1),
+                scale_image(
+                    np.sin(x_data)[None, ...]
+                    .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+                    .repeat(DEFAULT_IMAGE_WIDTH, 1)
+                ),
+                scale_image(
+                    np.cos(x_data)[None, ...]
+                    .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+                    .repeat(DEFAULT_IMAGE_WIDTH, 1)
+                ),
             ]
         )
     time_taken_same_process = time.time() - start_time_same_process
 
     # Faster when plotting is on separate process
     live_image_plotter_separate_process = SeparateProcessLivePlotter(
-        live_plotter=LiveImagePlotter(), plot_names=["sin", "cos"]
+        live_plotter=live_image_plotter, plot_names=["sin", "cos"]
     )
     live_image_plotter_separate_process.start()
     x_data = []
@@ -97,12 +110,12 @@ def test_live_image_plotter() -> None:
     for i in range(N_ITERS):
         x_data.append(i)
         time.sleep(SIMULATED_COMPUTATION_TIME_S)
-        live_image_plotter_separate_process.data_dict["sin"] = (
+        live_image_plotter_separate_process.data_dict["sin"] = scale_image(
             np.sin(x_data)[None, ...]
             .repeat(DEFAULT_IMAGE_HEIGHT, 0)
             .repeat(DEFAULT_IMAGE_WIDTH, 1)
         )
-        live_image_plotter_separate_process.data_dict["cos"] = (
+        live_image_plotter_separate_process.data_dict["cos"] = scale_image(
             np.cos(x_data)[None, ...]
             .repeat(DEFAULT_IMAGE_HEIGHT, 0)
             .repeat(DEFAULT_IMAGE_WIDTH, 1)
@@ -125,7 +138,9 @@ def test_live_plotter() -> None:
     OPTIMAL_TIME_S = N_ITERS * SIMULATED_COMPUTATION_TIME_S
 
     # Slower when plotting is on same process
-    live_plotter = LivePlotter(default_title=["sin", "cos"])
+    live_plotter = FastLivePlotter.from_desired_n_plots(
+        desired_n_plots=2, title=["sin", "cos"]
+    )
     x_data = []
     start_time_same_process = time.time()
     for i in range(N_ITERS):
@@ -138,7 +153,7 @@ def test_live_plotter() -> None:
 
     # Faster when plotting is on separate process
     live_plotter_separate_process = SeparateProcessLivePlotter(
-        live_plotter=LivePlotter(), plot_names=["sin", "cos"]
+        live_plotter=live_plotter, plot_names=["sin", "cos"]
     )
     live_plotter_separate_process.start()
     start_time_separate_process = time.time()
