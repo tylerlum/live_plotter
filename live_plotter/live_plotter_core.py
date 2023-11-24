@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import numpy as np
-from typing import Optional, List
+from typing import Optional, List, Tuple
 import math
 import sys
 
@@ -26,6 +26,8 @@ def plot_helper(
     titles: Optional[List[str]],
     xlabels: Optional[List[str]],
     ylabels: Optional[List[str]],
+    xlims: Optional[List[Tuple[float, float]]],
+    ylims: Optional[List[Tuple[float, float]]],
 ) -> None:
     """Plot data on existing figure"""
     n_plots = len(x_data_list)
@@ -38,6 +40,10 @@ def plot_helper(
         assert_equals(len(xlabels), n_plots)
     if ylabels is not None:
         assert_equals(len(ylabels), n_plots)
+    if xlims is not None:
+        assert_equals(len(xlims), n_plots)
+    if ylims is not None:
+        assert_equals(len(ylims), n_plots)
 
     plt.clf()
 
@@ -60,6 +66,12 @@ def plot_helper(
             ax.set_xlabel(xlabels[i])
         if ylabels is not None:
             ax.set_ylabel(ylabels[i])
+        if xlims is not None:
+            left, right = xlims[i]
+            ax.set_xlim(left=left, right=right)
+        if ylims is not None:
+            bottom, top = ylims[i]
+            ax.set_ylim(bottom=bottom, top=top)
 
     fig.tight_layout()
     fig.canvas.draw()
@@ -72,12 +84,16 @@ class LivePlotter:
         default_titles: Optional[List[str]] = None,
         default_xlabels: Optional[List[str]] = None,
         default_ylabels: Optional[List[str]] = None,
+        default_xlims: Optional[List[Tuple[float, float]]] = None,
+        default_ylims: Optional[List[Tuple[float, float]]] = None,
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
         self.default_titles = default_titles
         self.default_xlabels = default_xlabels
         self.default_ylabels = default_ylabels
+        self.default_xlims = default_xlims
+        self.default_ylims = default_ylims
         self.save_to_file_on_close = save_to_file_on_close
         self.save_to_file_on_exception = save_to_file_on_exception
 
@@ -96,6 +112,8 @@ class LivePlotter:
         titles: Optional[List[str]] = None,
         xlabels: Optional[List[str]] = None,
         ylabels: Optional[List[str]] = None,
+        xlims: Optional[List[Tuple[float, float]]] = None,
+        ylims: Optional[List[Tuple[float, float]]] = None,
     ) -> None:
         """Plot multiple 1D datas in a grid"""
         for y_data in y_data_list:
@@ -133,6 +151,14 @@ class LivePlotter:
             list_str=(ylabels if ylabels is not None else self.default_ylabels),
             fixed_length=n_plots,
         )
+        if xlims is None:
+            xlims = self.default_xlims
+        if ylims is None:
+            ylims = self.default_ylims
+        if xlims is not None:
+            assert_equals(len(xlims), n_plots)
+        if ylims is not None:
+            assert_equals(len(ylims), n_plots)
 
         plot_helper(
             fig=self.fig,
@@ -143,6 +169,8 @@ class LivePlotter:
             titles=titles,
             xlabels=xlabels,
             ylabels=ylabels,
+            xlims=xlims,
+            ylims=ylims,
         )
 
     def _save_to_file(self) -> None:

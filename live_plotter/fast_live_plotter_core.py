@@ -75,11 +75,15 @@ class FastLivePlotter:
         titles: Optional[List[str]] = None,
         xlabels: Optional[List[str]] = None,
         ylabels: Optional[List[str]] = None,
+        xlims: Optional[List[Tuple[float, float]]] = None,
+        ylims: Optional[List[Tuple[float, float]]] = None,
         n_rows: int = 1,
         n_cols: int = 1,
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
     ) -> None:
+        self.xlims = xlims
+        self.ylims = ylims
         self.n_rows = n_rows
         self.n_cols = n_cols
         self.save_to_file_on_close = save_to_file_on_close
@@ -120,6 +124,14 @@ class FastLivePlotter:
 
             ax.set_xlabel(_xlabel)
             ax.set_ylabel(_ylabel)
+
+            if self.xlims is not None and i < len(self.xlims):
+                left, right = self.xlims[i]
+                ax.set_xlim(left=left, right=right)
+            if self.ylims is not None and i < len(self.ylims):
+                bottom, top = self.ylims[i]
+                ax.set_ylim(bottom=bottom, top=top)
+
             line = ax.plot([], [])[0]
             self.axes.append(ax)
             self.lines.append(line)
@@ -133,12 +145,14 @@ class FastLivePlotter:
     @classmethod
     def from_desired_n_plots(
         cls,
+        desired_n_plots: int,
         titles: Optional[List[str]] = None,
         xlabels: Optional[List[str]] = None,
         ylabels: Optional[List[str]] = None,
+        xlims: Optional[List[Tuple[float, float]]] = None,
+        ylims: Optional[List[Tuple[float, float]]] = None,
         save_to_file_on_close: bool = False,
         save_to_file_on_exception: bool = False,
-        desired_n_plots: int = 1,
     ) -> FastLivePlotter:
         n_rows = math.ceil(math.sqrt(desired_n_plots))
         n_cols = math.ceil(desired_n_plots / n_rows)
@@ -147,6 +161,8 @@ class FastLivePlotter:
             titles=titles,
             xlabels=xlabels,
             ylabels=ylabels,
+            xlims=xlims,
+            ylims=ylims,
             n_rows=n_rows,
             n_cols=n_cols,
             save_to_file_on_close=save_to_file_on_close,
