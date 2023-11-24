@@ -172,8 +172,17 @@ def test_live_plotter() -> None:
 
 
 def main() -> None:
-    test_live_image_plotter()
-    test_live_plotter()
+    TEST_LIVE_IMAGE_PLOTTER = True
+    TEST_LIVE_PLOTTER = False
+
+    assert not (
+        TEST_LIVE_IMAGE_PLOTTER and TEST_LIVE_PLOTTER
+    ), "Only one test at a time, errors if both are True"
+
+    if TEST_LIVE_IMAGE_PLOTTER:
+        test_live_image_plotter()
+    elif TEST_LIVE_PLOTTER:
+        test_live_plotter()
 
 
 if __name__ == "__main__":
