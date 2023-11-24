@@ -38,11 +38,15 @@ Options:
 
 ## Live Plotter
 
-![live_plotter](https://github.com/tylerlum/live_plotting/assets/26510814/919532a7-3d6d-47c2-b2e6-4aebb66d2591)
+![2023-11-23_16-55-40_live_plot](https://github.com/tylerlum/live_plotter/assets/26510814/5481f062-743a-40f9-8e1a-31a2d8dee24e)
 
 ## Fast Live Plotter
 
-![fast_live_plotter](https://github.com/tylerlum/live_plotting/assets/26510814/6c9c1647-e4b2-4589-ba91-ba3f5947843c)
+![2023-11-23_16-55-46_fast_live_plot](https://github.com/tylerlum/live_plotter/assets/26510814/133093bc-6503-470d-b531-ab1b7948f13a)
+
+## Live Image Plotter
+
+![2023-11-23_16-55-54_live_image_plot](https://github.com/tylerlum/live_plotter/assets/26510814/6051c114-d537-4e1a-8889-34bc0c067fe5)
 
 ## Example Usage of `LivePlotter`
 
