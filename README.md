@@ -36,6 +36,8 @@ Options:
 
 - `SeparateProcessLivePlotter`
 
+TODO: Compare with https://igitugraz.github.io/live-plotter/liveplotter.html
+
 ## Live Plotter
 
 ![2023-11-23_16-55-40_live_plot](https://github.com/tylerlum/live_plotter/assets/26510814/5481f062-743a-40f9-8e1a-31a2d8dee24e)
