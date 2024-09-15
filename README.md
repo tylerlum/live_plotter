@@ -20,8 +20,6 @@ In this library, we have two axes of variation:
 
 Additionally, we have a wrapper `SeparateProcessLivePlotter` that takes in any of the above plotters and creates a separate process to update the plot. The above plotters run on the same process as the main process, but `SeparateProcessLivePlotter` is run on another process so there is much less performance overhead on the main process from plotting. Plotting takes time, so running the plotting code in the same process as the main process can significantly slow things down, especially as plots get larger. This must be done on a new process instead of a new thread because the GUI does not work on non-main threads.
 
-Lastly, you can add `save_to_file_on_close=True` to save the figure to a file when the live plotter is deleted (either out of scope or end of script). You can add `save_to_file_on_exception=True` to save the figure to a file when an exception occurs. Note this feature is experimental.
-
 Please refer to the associated example code for more details.
 
 Options:

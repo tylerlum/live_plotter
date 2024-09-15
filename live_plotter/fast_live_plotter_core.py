@@ -96,15 +96,11 @@ class FastLivePlotter:
         ylims: Optional[List[Tuple[float, float]]] = None,
         n_rows: int = 1,
         n_cols: int = 1,
-        save_to_file_on_close: bool = False,
-        save_to_file_on_exception: bool = False,
     ) -> None:
         self.xlims = xlims
         self.ylims = ylims
         self.n_rows = n_rows
         self.n_cols = n_cols
-        self.save_to_file_on_close = save_to_file_on_close
-        self.save_to_file_on_exception = save_to_file_on_exception
         self.n_plots = n_rows * n_cols
 
         self.titles = convert_to_list_str_fixed_len(
@@ -156,9 +152,6 @@ class FastLivePlotter:
         self.fig.canvas.draw()
         plt.pause(0.001)
 
-        if self.save_to_file_on_exception:
-            self._setup_exception_hook()
-
     @classmethod
     def from_desired_n_plots(
         cls,
@@ -168,8 +161,6 @@ class FastLivePlotter:
         ylabels: Optional[List[str]] = None,
         xlims: Optional[List[Tuple[float, float]]] = None,
         ylims: Optional[List[Tuple[float, float]]] = None,
-        save_to_file_on_close: bool = False,
-        save_to_file_on_exception: bool = False,
     ) -> FastLivePlotter:
         n_rows = math.ceil(math.sqrt(desired_n_plots))
         n_cols = math.ceil(desired_n_plots / n_rows)
@@ -182,8 +173,6 @@ class FastLivePlotter:
             ylims=ylims,
             n_rows=n_rows,
             n_cols=n_cols,
-            save_to_file_on_close=save_to_file_on_close,
-            save_to_file_on_exception=save_to_file_on_exception,
         )
 
     def plot(
@@ -211,30 +200,6 @@ class FastLivePlotter:
             xlims=self.xlims,
             ylims=self.ylims,
         )
-
-    def _save_to_file(self) -> None:
-        filename = (
-            f"{datetime_str()}_{self.titles}.png"
-            if len("".join(self.titles)) > 0
-            else f"{datetime_str()}.png"
-        )
-        print(f"Saving to {filename}")
-        self.fig.savefig(filename)
-        print(f"Saved to {filename}")
-
-    def __del__(self) -> None:
-        if self.save_to_file_on_close:
-            self._save_to_file()
-
-    def _setup_exception_hook(self) -> None:
-        original_excepthook = sys.excepthook
-
-        def exception_hook(exctype, value, traceback):
-            print(f"Exception hook called ({self.__class__.__name__})")
-            self._save_to_file()
-            original_excepthook(exctype, value, traceback)
-
-        sys.excepthook = exception_hook
 
 
 def main() -> None:

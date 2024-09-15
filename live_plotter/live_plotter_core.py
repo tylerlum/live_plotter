@@ -91,22 +91,15 @@ class LivePlotter:
         default_ylabels: Optional[List[str]] = None,
         default_xlims: Optional[List[Tuple[float, float]]] = None,
         default_ylims: Optional[List[Tuple[float, float]]] = None,
-        save_to_file_on_close: bool = False,
-        save_to_file_on_exception: bool = False,
     ) -> None:
         self.default_titles = default_titles
         self.default_xlabels = default_xlabels
         self.default_ylabels = default_ylabels
         self.default_xlims = default_xlims
         self.default_ylims = default_ylims
-        self.save_to_file_on_close = save_to_file_on_close
-        self.save_to_file_on_exception = save_to_file_on_exception
 
         self.fig = plt.figure()
         plt.show(block=False)
-
-        if self.save_to_file_on_exception:
-            self._setup_exception_hook()
 
     def plot(
         self,
@@ -177,30 +170,6 @@ class LivePlotter:
             xlims=xlims,
             ylims=ylims,
         )
-
-    def _save_to_file(self) -> None:
-        filename = (
-            f"{datetime_str()}_{self.default_titles}.png"
-            if self.default_titles is not None
-            else f"{datetime_str()}.png"
-        )
-        print(f"Saving to {filename}")
-        self.fig.savefig(filename)
-        print(f"Saved to {filename}")
-
-    def __del__(self) -> None:
-        if self.save_to_file_on_close:
-            self._save_to_file()
-
-    def _setup_exception_hook(self) -> None:
-        original_excepthook = sys.excepthook
-
-        def exception_hook(exctype, value, traceback):
-            print(f"Exception hook called ({self.__class__.__name__})")
-            self._save_to_file()
-            original_excepthook(exctype, value, traceback)
-
-        sys.excepthook = exception_hook
 
 
 def main() -> None:
