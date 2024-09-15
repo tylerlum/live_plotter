@@ -75,7 +75,12 @@ def plot_helper(
 
     fig.tight_layout()
     fig.canvas.draw()
-    plt.pause(0.001)
+
+    # Replace plt.pause(0.001) to avoid focus stealing
+    # https://github.com/tylerlum/live_plotter/issues/2
+    # plt.pause(0.001)
+    fig.canvas.draw_idle()
+    fig.canvas.start_event_loop(0.001)
 
 
 class LivePlotter:
