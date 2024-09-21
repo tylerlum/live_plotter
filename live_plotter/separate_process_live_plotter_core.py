@@ -1,12 +1,13 @@
-from multiprocessing import Process, Event, Manager
-from typing import List, Union
-import numpy as np
 import sys
+from multiprocessing import Event, Manager, Process
+from typing import List, Union
 
-from live_plotter.live_plotter_core import LivePlotter
-from live_plotter.live_image_plotter_core import LiveImagePlotter
-from live_plotter.fast_live_plotter_core import FastLivePlotter
+import numpy as np
+
 from live_plotter.fast_live_image_plotter_core import FastLiveImagePlotter
+from live_plotter.fast_live_plotter_core import FastLivePlotter
+from live_plotter.live_image_plotter_core import LiveImagePlotter
+from live_plotter.live_plotter_core import LivePlotter
 from live_plotter.utils import scale_image
 
 
@@ -78,9 +79,7 @@ def main_live_image_plotter() -> None:
     DEFAULT_IMAGE_HEIGHT, DEFAULT_IMAGE_WIDTH = 100, 100
 
     # Slower when plotting is on same process
-    live_image_plotter = FastLiveImagePlotter.from_desired_n_plots(
-        desired_n_plots=2, titles=["sin", "cos"]
-    )
+    live_image_plotter = FastLiveImagePlotter(n_plots=2, titles=["sin", "cos"])
     x_data = []
     start_time_same_process = time.time()
     for i in range(N_ITERS):
@@ -140,9 +139,7 @@ def main_live_plotter() -> None:
     OPTIMAL_TIME_S = N_ITERS * SIMULATED_COMPUTATION_TIME_S
 
     # Slower when plotting is on same process
-    live_plotter = FastLivePlotter.from_desired_n_plots(
-        desired_n_plots=2, titles=["sin", "cos"]
-    )
+    live_plotter = FastLivePlotter(n_plots=2, titles=["sin", "cos"])
     x_data = []
     start_time_same_process = time.time()
     for i in range(N_ITERS):
@@ -174,8 +171,8 @@ def main_live_plotter() -> None:
 
 
 def main() -> None:
-    TEST_LIVE_IMAGE_PLOTTER = True
-    TEST_LIVE_PLOTTER = False
+    TEST_LIVE_IMAGE_PLOTTER = False
+    TEST_LIVE_PLOTTER = True
 
     assert not (
         TEST_LIVE_IMAGE_PLOTTER and TEST_LIVE_PLOTTER

@@ -42,7 +42,7 @@ class FastLivePlotter:
         Create a FastLivePlotter object consisting of n_plots subplots arranged in a grid of shape n_rows x n_cols (or automatically computed if not given).
 
         Args:
-            n_plots: int, number of plots
+            n_plots: int, number of subplots
             n_rows: Optional[int], number of rows in the grid of subplots
                     If n_rows is None, then n_rows will be automatically computed
             n_cols: Optional[int], number of columns in the grid of subplots
@@ -152,6 +152,7 @@ class FastLivePlotter:
             self.lines_list.append(lines)
         self.fig.tight_layout()
         self.fig.canvas.draw()
+
         plt.pause(0.001)
 
     def plot(
@@ -171,6 +172,7 @@ class FastLivePlotter:
                        If x_data_list[i] is None, then x_data is assumed to be default 0, 1, 2, ..., D-1 for subplot i
         """
         n_plots = len(y_data_list)
+        assert_equals(n_plots, self.n_plots)
 
         # Validate y_data
         for y_data in y_data_list:

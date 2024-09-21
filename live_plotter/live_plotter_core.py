@@ -69,7 +69,6 @@ class LivePlotter:
                    If legends[i] is not None, it must be of length N, where N is the number of plots in subplot i
                    Ignored if y_data is 1D
         """
-        # Validate n_rows and n_cols
         n_plots = len(y_data_list)
 
         # Infer n_rows and n_cols if not given

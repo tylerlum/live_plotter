@@ -1,5 +1,4 @@
 import math
-from datetime import datetime
 from typing import Optional, Tuple
 
 import numpy as np
@@ -7,10 +6,6 @@ import numpy as np
 
 def assert_equals(a, b):
     assert a == b, f"{a} != {b}"
-
-
-def datetime_str() -> str:
-    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
 def compute_n_rows_n_cols(
