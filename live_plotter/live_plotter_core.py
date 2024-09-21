@@ -19,7 +19,6 @@ class LivePlotter:
         """
         Create a live plotter object.
         """
-
         self.fig = plt.figure()
         plt.show(block=False)
 
@@ -46,7 +45,9 @@ class LivePlotter:
                        If x_data_list is None, then x_data is assumed to be default 0, 1, 2, ..., D-1 for all subplots
                        If x_data_list[i] is None, then x_data is assumed to be default 0, 1, 2, ..., D-1 for subplot i
           n_rows: Optional[int], number of rows in the grid of subplots
+                  If n_rows is None, then n_rows will be automatically computed
           n_cols: Optional[int], number of columns in the grid of subplots
+                  If n_cols is None, then n_cols will be automatically computed
           titles: Optional[List[Optional[str]]], where each element is the title for a subplot
                   If titles is None, then the default titles are used
                   If titles[i] is None, then the default title is used for subplot i
@@ -85,34 +86,21 @@ class LivePlotter:
         for y_data in y_data_list:
             assert y_data.ndim in [1, 2], f"y_data.ndim = {y_data.ndim}"
 
-        # Validate x_data
+        # Validate other inputs
         if x_data_list is None:
-            x_data_list = [None for _ in y_data_list]
-
+            x_data_list = [None for _ in range(n_plots)]
         assert_equals(len(x_data_list), n_plots)
-        for i, x_data in enumerate(x_data_list):
-            if x_data is None:
-                if y_data_list[i].ndim == 1:
-                    x_data = np.arange(len(y_data_list[i]))
-                else:
-                    N, D = y_data_list[i].shape
-                    x_data = np.arange(N).reshape(N, 1).repeat(D, axis=1)
-
-            assert x_data is not None
-            assert_equals(x_data.shape, y_data_list[i].shape)
-
-            x_data_list[i] = x_data
 
         if titles is None:
-            titles = ["" for _ in range(n_plots)]
+            titles = [None for _ in range(n_plots)]
         assert_equals(len(titles), n_plots)
 
         if xlabels is None:
-            xlabels = ["" for _ in range(n_plots)]
+            xlabels = [None for _ in range(n_plots)]
         assert_equals(len(xlabels), n_plots)
 
         if ylabels is None:
-            ylabels = ["" for _ in range(n_plots)]
+            ylabels = [None for _ in range(n_plots)]
         assert_equals(len(ylabels), n_plots)
 
         if xlims is None:
@@ -125,6 +113,7 @@ class LivePlotter:
 
         if legends is None:
             legends = [None for _ in range(n_plots)]
+        assert_equals(len(legends), n_plots)
 
         plt.clf()
 
@@ -142,6 +131,14 @@ class LivePlotter:
         ):
             ax_idx = i + 1
             ax = self.fig.add_subplot(n_rows, n_cols, ax_idx)
+
+            if x_data is None:
+                if y_data.ndim == 2:
+                    D, N = y_data.shape
+                    x_data = np.arange(D).reshape(-1, 1).repeat(N, axis=1)
+                else:
+                    D = y_data.shape[0]
+                    x_data = np.arange(D)
 
             if y_data.ndim == 2 and legend is not None:
                 ax.plot(x_data, y_data, label=legend)
