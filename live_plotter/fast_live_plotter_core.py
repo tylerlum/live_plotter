@@ -153,6 +153,7 @@ class FastLivePlotter:
         self.fig.tight_layout()
         self.fig.canvas.draw()
 
+        # This must still be a plt.pause to properly live update the plot
         plt.pause(0.001)
 
     def plot(

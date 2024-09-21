@@ -100,8 +100,7 @@ class FastLiveImagePlotter:
         self.fig.tight_layout()
         self.fig.canvas.draw()
 
-        # Replace plt.pause(0.001) to avoid focus stealing
-        # https://github.com/tylerlum/live_plotter/issues/2
+        # This must still be a plt.pause to properly live update the plot
         plt.pause(0.001)
 
     def plot(
