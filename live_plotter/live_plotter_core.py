@@ -1,4 +1,3 @@
-import math
 from typing import List, Optional, Tuple
 
 import matplotlib.pyplot as plt
@@ -7,6 +6,7 @@ import seaborn as sns
 
 from live_plotter.utils import (
     assert_equals,
+    compute_n_rows_n_cols,
 )
 
 sns.set_theme()
@@ -17,7 +17,7 @@ class LivePlotter:
         self,
     ) -> None:
         """
-        Create a live plotter object.
+        Create a LivePlotter object.
         """
         self.fig = plt.figure()
         plt.show(block=False)
@@ -73,14 +73,14 @@ class LivePlotter:
         n_plots = len(y_data_list)
 
         # Infer n_rows and n_cols if not given
-        if n_rows is None and n_cols is None:
-            n_rows = math.ceil(math.sqrt(n_plots))
-            n_cols = math.ceil(n_plots / n_rows)
-        elif n_cols is None:
-            assert n_rows is not None
-            n_cols = math.ceil(n_plots / n_rows)
-        elif n_rows is None:
-            n_rows = math.ceil(n_plots / n_cols)
+        n_rows, n_cols = compute_n_rows_n_cols(
+            n_plots=n_plots,
+            n_rows=n_rows,
+            n_cols=n_cols,
+        )
+        assert (
+            n_plots <= n_rows * n_cols
+        ), f"n_plots = {n_plots}, n_rows = {n_rows}, n_cols = {n_cols}"
 
         # Validate y_data
         for y_data in y_data_list:
@@ -139,8 +139,11 @@ class LivePlotter:
                 else:
                     D = y_data.shape[0]
                     x_data = np.arange(D)
+            assert_equals(x_data.shape, y_data.shape)
 
             if y_data.ndim == 2 and legend is not None:
+                _, N = y_data.shape
+                assert_equals(len(legend), N)
                 ax.plot(x_data, y_data, label=legend)
                 ax.legend()
             else:

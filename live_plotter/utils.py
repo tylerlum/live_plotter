@@ -1,5 +1,7 @@
+import math
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional, Tuple
+
 import numpy as np
 
 
@@ -11,16 +13,30 @@ def datetime_str() -> str:
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 
-def convert_to_list_str_fixed_len(
-    list_str: Optional[List[str]], fixed_length: int
-) -> List[str]:
-    if list_str is None:
-        return [""] * fixed_length
+def compute_n_rows_n_cols(
+    n_plots: int,
+    n_rows: Optional[int],
+    n_cols: Optional[int],
+) -> Tuple[int, int]:
+    assert n_plots > 0
 
-    if len(list_str) < fixed_length:
-        return list_str + [""] * (fixed_length - len(list_str))
-
-    return list_str[:fixed_length]
+    if n_rows is not None and n_cols is not None:
+        assert n_rows * n_cols >= n_plots
+        return n_rows, n_cols
+    elif n_rows is None and n_cols is None:
+        n_rows = math.ceil(math.sqrt(n_plots))
+        n_cols = math.ceil(n_plots / n_rows)
+        return n_rows, n_cols
+    elif n_cols is None:
+        assert n_rows is not None
+        n_cols = math.ceil(n_plots / n_rows)
+        return n_rows, n_cols
+    elif n_rows is None:
+        assert n_cols is not None
+        n_rows = math.ceil(n_plots / n_cols)
+        return n_rows, n_cols
+    else:
+        raise ValueError("This should not happen")
 
 
 DEFAULT_IMAGE_HEIGHT = 100

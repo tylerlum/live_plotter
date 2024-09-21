@@ -6,12 +6,10 @@ from typing import List, Optional, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
-from matplotlib.lines import Line2D
 
 from live_plotter.utils import (
     assert_equals,
+    compute_n_rows_n_cols,
 )
 
 sns.set_theme()
@@ -27,63 +25,6 @@ def compute_axes_min_max(axes_min: float, axes_max: float) -> Tuple[float, float
     return 0.95 * axes_min, 1.05 * axes_max
 
 
-def fast_plot_helper(
-    fig: Figure,
-    x_data_list: List[np.ndarray],
-    y_data_list: List[np.ndarray],
-    axes: List[Axes],
-    lines: List[Line2D],
-    xlims: Optional[List[Tuple[float, float]]] = None,
-    ylims: Optional[List[Tuple[float, float]]] = None,
-) -> None:
-    """Plot data on existing figure onto existing axes and lines"""
-    # Shape checks
-    n_plots = len(x_data_list)
-    assert_equals(len(y_data_list), n_plots)
-
-    max_n_plots = len(axes)
-    assert_equals(len(lines), max_n_plots)
-
-    assert n_plots <= max_n_plots, f"{n_plots} > {max_n_plots}"
-
-    for i in range(n_plots):
-        line, ax = lines[i], axes[i]
-        x_data, y_data = x_data_list[i], y_data_list[i]
-
-        assert_equals(x_data.shape, y_data.shape)
-        assert_equals(len(x_data.shape), 1)
-
-        line.set_data(x_data, y_data)
-
-        if xlims is not None and i < len(xlims):
-            left, right = xlims[i]
-            ax.set_xlim(left=left, right=right)
-        else:
-            # Handle case when min == max
-            x_min, x_max = compute_axes_min_max(
-                axes_min=np.min(x_data), axes_max=np.max(x_data)
-            )
-            ax.set_xlim(left=x_min, right=x_max)
-
-        if ylims is not None and i < len(ylims):
-            bottom, top = ylims[i]
-            ax.set_ylim(bottom=bottom, top=top)
-        else:
-            # Handle case when min == max
-            y_min, y_max = compute_axes_min_max(
-                axes_min=np.min(y_data), axes_max=np.max(y_data)
-            )
-            ax.set_ylim(bottom=y_min, top=y_max)
-
-    fig.tight_layout()
-
-    # Replace plt.pause(0.001) to avoid focus stealing
-    # https://github.com/tylerlum/live_plotter/issues/2
-    # plt.pause(0.001)
-    fig.canvas.draw_idle()
-    fig.canvas.start_event_loop(0.001)
-
-
 class FastLivePlotter:
     def __init__(
         self,
@@ -97,52 +38,77 @@ class FastLivePlotter:
         ylims: Optional[List[Optional[Tuple[float, float]]]] = None,
         legends: Optional[List[Optional[List[str]]]] = None,
     ) -> None:
+        """
+        Create a FastLivePlotter object consisting of n_plots subplots arranged in a grid of shape n_rows x n_cols (or automatically computed if not given).
+
+        Args:
+            n_plots: int, number of plots
+            n_rows: Optional[int], number of rows in the grid of subplots
+                    If n_rows is None, then n_rows will be automatically computed
+            n_cols: Optional[int], number of columns in the grid of subplots
+                    If n_cols is None, then n_cols will be automatically computed
+            titles: Optional[List[Optional[str]]], where each element is the title for a subplot
+                    If titles is None, then the default titles are used
+                    If titles[i] is None, then the default title is used for subplot i
+            xlabels: Optional[List[Optional[str]]], where each element is the x label for a subplot
+                     If xlabels is None, then the default x labels are used
+                     If xlabels[i] is None, then the default x label is used for subplot i
+            ylabels: Optional[List[Optional[str]]], where each element is the y label for a subplot
+                     If ylabels is None, then the default y labels are used
+                     If ylabels[i] is None, then the default y label is used for subplot i
+            xlims: Optional[List[Optional[Tuple[float, float]]], where each element is the x limits for a subplot
+                   If xlims is None, then the default x limits are used
+                   If xlims[i] is None, then the default x limits are used for subplot i
+            ylims: Optional[List[Optional[Tuple[float, float]]], where each element is the y limits for a subplot
+                   If ylims is None, then the default y limits are used
+                   If ylims[i] is None, then the default y limits are used for subplot i
+            legends: Optional[List[Optional[List[str]]], where each element is the legend for a subplot
+                     If legends is None, then the default legends are used
+                     If legends[i] is None, then the default legend is used for subplot i
+                     If legends[i] is not None, it must be of length N, where N is the number of plots in subplot i
+                     Requires y_data to be 2D
+        """
         self.n_plots = n_plots
-        self.n_rows = n_rows
-        self.n_cols = n_cols
+
+        # Infer n_rows and n_cols if not given
+        self.n_rows, self.n_cols = compute_n_rows_n_cols(
+            n_plots=n_plots, n_rows=n_rows, n_cols=n_cols
+        )
+        assert (
+            self.n_plots <= self.n_rows * self.n_cols
+        ), f"n_plots = {self.n_plots}, n_rows = {self.n_rows}, n_cols = {self.n_cols}"
+
+        # Validate other inputs
+        if titles is None:
+            titles = [None for _ in range(self.n_plots)]
+        assert_equals(len(titles), self.n_plots)
+
+        if xlabels is None:
+            xlabels = [None for _ in range(self.n_plots)]
+        assert_equals(len(xlabels), self.n_plots)
+
+        if ylabels is None:
+            ylabels = [None for _ in range(self.n_plots)]
+        assert_equals(len(ylabels), self.n_plots)
+
+        if xlims is None:
+            xlims = [None for _ in range(self.n_plots)]
+        assert_equals(len(xlims), self.n_plots)
+
+        if ylims is None:
+            ylims = [None for _ in range(self.n_plots)]
+        assert_equals(len(ylims), self.n_plots)
+
+        if legends is None:
+            legends = [None for _ in range(self.n_plots)]
+        assert_equals(len(legends), self.n_plots)
+
         self.titles = titles
         self.xlabels = xlabels
         self.ylabels = ylabels
         self.xlims = xlims
         self.ylims = ylims
         self.legends = legends
-
-        # TODO: replace with comute_n_rows_n_cols
-        # Infer n_rows and n_cols if not given
-        if self.n_rows is None and self.n_cols is None:
-            self.n_rows = math.ceil(math.sqrt(n_plots))
-            self.n_cols = math.ceil(n_plots / self.n_rows)
-        elif self.n_cols is None:
-            assert self.n_rows is not None
-            self.n_cols = math.ceil(n_plots / self.n_rows)
-        elif self.n_rows is None:
-            self.n_rows = math.ceil(n_plots / self.n_cols)
-
-        self.total_n_plots = self.n_rows * self.n_cols
-
-        if self.titles is None:
-            self.titles = [None for _ in range(self.n_plots)]
-        assert_equals(len(self.titles), self.n_plots)
-
-        if self.xlabels is None:
-            self.xlabels = [None for _ in range(self.n_plots)]
-        assert_equals(len(self.xlabels), self.n_plots)
-
-        if self.ylabels is None:
-            self.ylabels = [None for _ in range(self.n_plots)]
-        assert_equals(len(self.ylabels), self.n_plots)
-
-        if self.xlims is None:
-            self.xlims = [None for _ in range(self.n_plots)]
-        assert_equals(len(self.xlims), self.n_plots)
-
-        if self.ylims is None:
-            self.ylims = [None for _ in range(self.n_plots)]
-        assert_equals(len(self.ylims), self.n_plots)
-
-        if self.legends is None:
-            self.legends = [None for _ in range(self.n_plots)]
-        assert_equals(len(self.legends), self.n_plots)
 
         plt.show(block=False)
 
@@ -193,6 +159,17 @@ class FastLivePlotter:
         y_data_list: List[np.ndarray],
         x_data_list: Optional[List[Optional[np.ndarray]]] = None,
     ) -> None:
+        """
+        Update the plot with new data.
+
+        Args:
+          y_data_list: List[np.ndarray], where each element is the y_data for subplot i
+                       y_data is expected to be 1D of shape (D,) or 2D of shape (D, N), where D is the data dimension for 1 plot and N is the number of plots in this subplot
+                       If legends was provided in the constructor, then y_data must be 2D
+          x_data_list: Optional[List[Optional[np.ndarray]]], where each element is the x_data for a subplot
+                       If x_data_list is None, then x_data is assumed to be default 0, 1, 2, ..., D-1 for all subplots
+                       If x_data_list[i] is None, then x_data is assumed to be default 0, 1, 2, ..., D-1 for subplot i
+        """
         n_plots = len(y_data_list)
 
         # Validate y_data
