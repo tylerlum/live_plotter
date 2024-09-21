@@ -64,13 +64,35 @@ for i in range(25):
     )
 ```
 
+## Example Usage of `LivePlotter` (mult-line plot)
+
+```
+import numpy as np
+from live_plotter import LivePlotter
+
+live_plotter = LivePlotter()
+
+new_x_data = []
+for i in range(25):
+    new_x_data.append(i)
+    y_data = np.stack([np.sin(new_x_data), np.cos(new_x_data)], axis=1)
+    live_plotter.plot(
+        y_data_list=[y_data],
+        titles=["sin and cos"],
+        xlabels=["x"],
+        ylabels=["y"],
+        ylims=[(-2, 2)],
+        legends=[["sin", "cos"]],
+    )
+```
+
 ## Example Usage of `FastLivePlotter`
 
 ```
 import numpy as np
 from live_plotter import FastLivePlotter
 
-live_plotter = FastLivePlotter(titles=["sin", "cos"], n_rows=2, n_cols=1)
+live_plotter = FastLivePlotter(titles=["sin", "cos"], n_plots=2, n_rows=2, n_cols=1)
 x_data = []
 for i in range(25):
     x_data.append(i)
@@ -79,7 +101,31 @@ for i in range(25):
     )
 ```
 
-## Example Usage of `FastLivePlotter` using `from_desired_n_plots` (recommended method for more complex use-cases)
+## Example Usage of `FastLivePlotter` (multi-line plot)
+
+```
+import numpy as np
+
+from live_plotter import FastLivePlotter
+
+new_x_data = []
+live_plotter = FastLivePlotter(
+    n_plots=1,
+    titles=["sin and cos"],
+    xlabels=["x"],
+    ylabels=["y"],
+    ylims=[(-2, 2)],
+    legends=[["sin", "cos"]],
+)
+for i in range(25):
+    new_x_data.append(i)
+    y_data = np.stack([np.sin(new_x_data), np.cos(new_x_data)], axis=1)
+    live_plotter.plot(
+        y_data_list=[y_data],
+    )
+```
+
+## Example Usage of `FastLivePlotter` (complex example)
 
 ```
 import numpy as np
@@ -94,8 +140,8 @@ y_data_dict = {
     "ln(2^x)": [],
 }
 plot_names = list(y_data_dict.keys())
-live_plotter = FastLivePlotter.from_desired_n_plots(
-    titles=plot_names, desired_n_plots=len(plot_names)
+live_plotter = FastLivePlotter(
+    titles=plot_names, n_plots=len(plot_names)
 )
 for i in range(25):
     y_data_dict["exp(-x/10)"].append(np.exp(-i / 10))
@@ -122,8 +168,8 @@ SIMULATED_COMPUTATION_TIME_S = 0.1
 OPTIMAL_TIME_S = N_ITERS * SIMULATED_COMPUTATION_TIME_S
 
 # Slower when plotting is on same process
-live_plotter = FastLivePlotter.from_desired_n_plots(
-    desired_n_plots=2, titles=["sin", "cos"]
+live_plotter = FastLivePlotter(
+    n_plots=2, titles=["sin", "cos"]
 )
 x_data = []
 start_time_same_process = time.time()
@@ -190,4 +236,38 @@ for i in range(N):
         .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
     )
     live_plotter.plot(image_data_list=[scale_image(image_data, min_val=-1.0, max_val=1.0)])
+```
+
+## Example Usage of `FastLiveImagePlotter`
+
+```
+import numpy as np
+from live_plotter import FastLiveImagePlotter, scale_image
+
+N = 25
+DEFAULT_IMAGE_HEIGHT = 100
+DEFAULT_IMAGE_WIDTH = 100
+
+live_plotter = FastLiveImagePlotter(
+    titles=["sin", "cos"], n_plots=2, n_rows=2, n_cols=1
+)
+x_data = []
+for i in range(N):
+    x_data.append(i)
+    image_data_1 = (
+        np.sin(x_data)[None, ...]
+        .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+        .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
+    )
+    image_data_2 = (
+        np.cos(x_data)[None, ...]
+        .repeat(DEFAULT_IMAGE_HEIGHT, 0)
+        .repeat(DEFAULT_IMAGE_WIDTH // N, 1)
+    )
+    live_plotter.plot(
+        image_data_list=[
+            scale_image(image_data_1, min_val=-1.0, max_val=1.0),
+            scale_image(image_data_2),
+        ],
+    )
 ```
