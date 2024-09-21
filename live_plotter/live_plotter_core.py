@@ -1,102 +1,24 @@
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-import numpy as np
-from typing import Optional, List, Tuple
 import math
-import sys
+from typing import List, Optional, Tuple
 
+import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 
 from live_plotter.utils import (
     assert_equals,
-    datetime_str,
-    convert_to_list_str_fixed_len,
 )
 
-
 sns.set_theme()
-
-
-def plot_helper(
-    fig: Figure,
-    x_data_list: List[np.ndarray],
-    y_data_list: List[np.ndarray],
-    n_rows: int,
-    n_cols: int,
-    titles: Optional[List[str]],
-    xlabels: Optional[List[str]],
-    ylabels: Optional[List[str]],
-    xlims: Optional[List[Tuple[float, float]]],
-    ylims: Optional[List[Tuple[float, float]]],
-) -> None:
-    """Plot data on existing figure"""
-    n_plots = len(x_data_list)
-    assert_equals(len(y_data_list), n_plots)
-    assert n_plots <= n_rows * n_cols, f"{n_plots} > {n_rows} * {n_cols}"
-
-    if titles is not None:
-        assert_equals(len(titles), n_plots)
-    if xlabels is not None:
-        assert_equals(len(xlabels), n_plots)
-    if ylabels is not None:
-        assert_equals(len(ylabels), n_plots)
-    if xlims is not None:
-        assert_equals(len(xlims), n_plots)
-    if ylims is not None:
-        assert_equals(len(ylims), n_plots)
-
-    plt.clf()
-
-    for i in range(n_plots):
-        ax_idx = i + 1
-        ax = fig.add_subplot(n_rows, n_cols, ax_idx)
-
-        ax.plot(x_data_list[i], y_data_list[i])
-
-        if titles is not None:
-            PLOT_MODIFIED_TITLE = False
-            if PLOT_MODIFIED_TITLE:
-                ax.set_title(
-                    " ".join([titles[i], f"(Plot {i})"]) if n_plots > 1 else titles[i]
-                )
-            else:
-                ax.set_title(titles[i])
-
-        if xlabels is not None:
-            ax.set_xlabel(xlabels[i])
-        if ylabels is not None:
-            ax.set_ylabel(ylabels[i])
-        if xlims is not None:
-            left, right = xlims[i]
-            ax.set_xlim(left=left, right=right)
-        if ylims is not None:
-            bottom, top = ylims[i]
-            ax.set_ylim(bottom=bottom, top=top)
-
-    fig.tight_layout()
-    fig.canvas.draw()
-
-    # Replace plt.pause(0.001) to avoid focus stealing
-    # https://github.com/tylerlum/live_plotter/issues/2
-    # plt.pause(0.001)
-    fig.canvas.draw_idle()
-    fig.canvas.start_event_loop(0.001)
 
 
 class LivePlotter:
     def __init__(
         self,
-        default_titles: Optional[List[str]] = None,
-        default_xlabels: Optional[List[str]] = None,
-        default_ylabels: Optional[List[str]] = None,
-        default_xlims: Optional[List[Tuple[float, float]]] = None,
-        default_ylims: Optional[List[Tuple[float, float]]] = None,
     ) -> None:
-        self.default_titles = default_titles
-        self.default_xlabels = default_xlabels
-        self.default_ylabels = default_ylabels
-        self.default_xlims = default_xlims
-        self.default_ylims = default_ylims
+        """
+        Create a live plotter object.
+        """
 
         self.fig = plt.figure()
         plt.show(block=False)
@@ -104,28 +26,50 @@ class LivePlotter:
     def plot(
         self,
         y_data_list: List[np.ndarray],
-        x_data_list: Optional[List[np.ndarray]] = None,
+        x_data_list: Optional[List[Optional[np.ndarray]]] = None,
         n_rows: Optional[int] = None,
         n_cols: Optional[int] = None,
-        titles: Optional[List[str]] = None,
-        xlabels: Optional[List[str]] = None,
-        ylabels: Optional[List[str]] = None,
-        xlims: Optional[List[Tuple[float, float]]] = None,
-        ylims: Optional[List[Tuple[float, float]]] = None,
+        titles: Optional[List[Optional[str]]] = None,
+        xlabels: Optional[List[Optional[str]]] = None,
+        ylabels: Optional[List[Optional[str]]] = None,
+        xlims: Optional[List[Optional[Tuple[float, float]]]] = None,
+        ylims: Optional[List[Optional[Tuple[float, float]]]] = None,
+        legends: Optional[List[Optional[List[str]]]] = None,
     ) -> None:
-        """Plot multiple 1D datas in a grid"""
-        for y_data in y_data_list:
-            assert_equals(len(y_data.shape), 1)
+        """
+        Create a grid of subplots of shape n_rows x n_cols (or automatically computed if not given).
 
-        if x_data_list is None:
-            x_data_list = [np.arange(len(y_data)) for y_data in y_data_list]
-
-        assert x_data_list is not None
-        assert_equals(len(x_data_list), len(y_data_list))
-        for x_data, y_data in zip(x_data_list, y_data_list):
-            assert_equals(x_data.shape, y_data.shape)
-
-        n_plots = len(x_data_list)
+        Args:
+          y_data_list: List[np.ndarray], where each element is the y_data for subplot i
+                       y_data is expected to be 1D of shape (D,) or 2D of shape (D, N), where D is the data dimension for 1 plot and N is the number of plots in this subplot
+          x_data_list: Optional[List[Optional[np.ndarray]]], where each element is the x_data for a subplot
+                       If x_data_list is None, then x_data is assumed to be default 0, 1, 2, ..., D-1 for all subplots
+                       If x_data_list[i] is None, then x_data is assumed to be default 0, 1, 2, ..., D-1 for subplot i
+          n_rows: Optional[int], number of rows in the grid of subplots
+          n_cols: Optional[int], number of columns in the grid of subplots
+          titles: Optional[List[Optional[str]]], where each element is the title for a subplot
+                  If titles is None, then the default titles are used
+                  If titles[i] is None, then the default title is used for subplot i
+          xlabels: Optional[List[Optional[str]]], where each element is the x label for a subplot
+                   If xlabels is None, then the default x labels are used
+                   If xlabels[i] is None, then the default x label is used for subplot i
+          ylabels: Optional[List[Optional[str]]], where each element is the y label for a subplot
+                   If ylabels is None, then the default y labels are used
+                   If ylabels[i] is None, then the default y label is used for subplot i
+          xlims: Optional[List[Optional[Tuple[float, float]]], where each element is the x limits for a subplot
+                 If xlims is None, then the default x limits are used
+                 If xlims[i] is None, then the default x limits are used for subplot i
+          ylims: Optional[List[Optional[Tuple[float, float]]], where each element is the y limits for a subplot
+                 If ylims is None, then the default y limits are used
+                 If ylims[i] is None, then the default y limits are used for subplot i
+          legends: Optional[List[Optional[List[str]]], where each element is the legend for a subplot
+                   If legends is None, then the default legends are used
+                   If legends[i] is None, then the default legend is used for subplot i
+                   If legends[i] is not None, it must be of length N, where N is the number of plots in subplot i
+                   Ignored if y_data is 1D
+        """
+        # Validate n_rows and n_cols
+        n_plots = len(y_data_list)
 
         # Infer n_rows and n_cols if not given
         if n_rows is None and n_cols is None:
@@ -137,39 +81,95 @@ class LivePlotter:
         elif n_rows is None:
             n_rows = math.ceil(n_plots / n_cols)
 
-        titles = convert_to_list_str_fixed_len(
-            list_str=(titles if titles is not None else self.default_titles),
-            fixed_length=n_plots,
-        )
-        xlabels = convert_to_list_str_fixed_len(
-            list_str=(xlabels if xlabels is not None else self.default_xlabels),
-            fixed_length=n_plots,
-        )
-        ylabels = convert_to_list_str_fixed_len(
-            list_str=(ylabels if ylabels is not None else self.default_ylabels),
-            fixed_length=n_plots,
-        )
-        if xlims is None:
-            xlims = self.default_xlims
-        if ylims is None:
-            ylims = self.default_ylims
-        if xlims is not None:
-            assert_equals(len(xlims), n_plots)
-        if ylims is not None:
-            assert_equals(len(ylims), n_plots)
+        # Validate y_data
+        for y_data in y_data_list:
+            assert y_data.ndim in [1, 2], f"y_data.ndim = {y_data.ndim}"
 
-        plot_helper(
-            fig=self.fig,
-            x_data_list=x_data_list,
-            y_data_list=y_data_list,
-            n_rows=n_rows,
-            n_cols=n_cols,
-            titles=titles,
-            xlabels=xlabels,
-            ylabels=ylabels,
-            xlims=xlims,
-            ylims=ylims,
-        )
+        # Validate x_data
+        if x_data_list is None:
+            x_data_list = [None for _ in y_data_list]
+
+        assert_equals(len(x_data_list), n_plots)
+        for i, x_data in enumerate(x_data_list):
+            if x_data is None:
+                if y_data_list[i].ndim == 1:
+                    x_data = np.arange(len(y_data_list[i]))
+                else:
+                    N, D = y_data_list[i].shape
+                    x_data = np.arange(N).reshape(N, 1).repeat(D, axis=1)
+
+            assert x_data is not None
+            assert_equals(x_data.shape, y_data_list[i].shape)
+
+            x_data_list[i] = x_data
+
+        if titles is None:
+            titles = ["" for _ in range(n_plots)]
+        assert_equals(len(titles), n_plots)
+
+        if xlabels is None:
+            xlabels = ["" for _ in range(n_plots)]
+        assert_equals(len(xlabels), n_plots)
+
+        if ylabels is None:
+            ylabels = ["" for _ in range(n_plots)]
+        assert_equals(len(ylabels), n_plots)
+
+        if xlims is None:
+            xlims = [None for _ in range(n_plots)]
+        assert_equals(len(xlims), n_plots)
+
+        if ylims is None:
+            ylims = [None for _ in range(n_plots)]
+        assert_equals(len(ylims), n_plots)
+
+        if legends is None:
+            legends = [None for _ in range(n_plots)]
+
+        plt.clf()
+
+        for i, (x_data, y_data, title, xlabel, ylabel, xlim, ylim, legend) in enumerate(
+            zip(
+                x_data_list,
+                y_data_list,
+                titles,
+                xlabels,
+                ylabels,
+                xlims,
+                ylims,
+                legends,
+            )
+        ):
+            ax_idx = i + 1
+            ax = self.fig.add_subplot(n_rows, n_cols, ax_idx)
+
+            if y_data.ndim == 2 and legend is not None:
+                ax.plot(x_data, y_data, label=legend)
+                ax.legend()
+            else:
+                ax.plot(x_data, y_data)
+
+            if title is not None:
+                ax.set_title(title)
+            if xlabel is not None:
+                ax.set_xlabel(xlabel)
+            if ylabel is not None:
+                ax.set_ylabel(ylabel)
+            if xlim is not None:
+                left, right = xlim
+                ax.set_xlim(left=left, right=right)
+            if ylim is not None:
+                bottom, top = ylim
+                ax.set_ylim(bottom=bottom, top=top)
+
+        self.fig.tight_layout()
+        self.fig.canvas.draw()
+
+        # Replace plt.pause(0.001) to avoid focus stealing
+        # https://github.com/tylerlum/live_plotter/issues/2
+        # plt.pause(0.001)
+        self.fig.canvas.draw_idle()
+        self.fig.canvas.start_event_loop(0.001)
 
 
 def main() -> None:
@@ -204,6 +204,19 @@ def main() -> None:
         live_plotter.plot(
             y_data_list=[np.array(y_data_dict[plot_name]) for plot_name in plot_names],
             titles=plot_names,
+        )
+
+    new_x_data = []
+    for i in range(25):
+        new_x_data.append(i)
+        y_data = np.stack([np.sin(new_x_data), np.cos(new_x_data)], axis=1)
+        live_plotter.plot(
+            y_data_list=[y_data],
+            titles=["sin and cos"],
+            xlabels=["x"],
+            ylabels=["y"],
+            ylims=[(-2, 2)],
+            legends=[["sin", "cos"]],
         )
 
 
